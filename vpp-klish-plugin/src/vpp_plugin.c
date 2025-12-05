@@ -461,16 +461,119 @@ int vpp_show_ip_interface_brief(kcontext_t *context) {
 
 /* Show running config (stub) */
 int vpp_show_running_config(kcontext_t *context) {
-    kcontext_printf(context, "Building configuration...\n\n");
-    kcontext_printf(context, "Current configuration:\n");
+    kcontext_printf(context, "!\n! VPP Running Configuration\n!\n");
     
-    const char *interfaces = vpp_exec_cli("show interface addr\n");
-    kcontext_printf(context, "%s", interfaces);
+    /* Show loopback interfaces */
+    const char *iface_list = vpp_exec_cli("show interface");
+    char iface_buf[BUFFER_SIZE];
+    strncpy(iface_buf, iface_list, BUFFER_SIZE - 1);
+    iface_buf[BUFFER_SIZE - 1] = 0;
     
-    const char *routes = vpp_exec_cli("show ip fib\n");
-    kcontext_printf(context, "\n%s", routes);
+    char *iline = strtok(iface_buf, "\n");
+    while (iline) {
+        if (iline[0] != ' ' && strncmp(iline, "loop", 4) == 0) {
+            kcontext_printf(context, "create loopback interface\n");
+        }
+        iline = strtok(NULL, "\n");
+    }
     
-    kcontext_printf(context, "end\n");
+    /* Show bond interfaces */
+    const char *bond_info = vpp_exec_cli("show bond");
+    char bond_buf[BUFFER_SIZE];
+    strncpy(bond_buf, bond_info, BUFFER_SIZE - 1);
+    bond_buf[BUFFER_SIZE - 1] = 0;
+    
+    char *bline = strtok(bond_buf, "\n");
+    while (bline) {
+        if (strstr(bline, "BondEthernet")) {
+            kcontext_printf(context, "create bond mode lacp load-balance l34\n");
+        }
+        bline = strtok(NULL, "\n");
+    }
+    
+    /* Show VLAN subinterfaces */
+    const char *sub_list = vpp_exec_cli("show interface");
+    char sub_buf[BUFFER_SIZE];
+    strncpy(sub_buf, sub_list, BUFFER_SIZE - 1);
+    sub_buf[BUFFER_SIZE - 1] = 0;
+    
+    char *sline = strtok(sub_buf, "\n");
+    while (sline) {
+        if (sline[0] != ' ') {
+            char name[64] = {0};
+            if (sscanf(sline, "%63s", name) == 1) {
+                char *dot = strchr(name, '.');
+                if (dot && strncmp(name, "tap", 3) != 0) {
+                    char parent[64] = {0};
+                    size_t plen = dot - name;
+                    if (plen >= sizeof(parent)) plen = sizeof(parent) - 1;
+                    strncpy(parent, name, plen);
+                    int vlan_id = atoi(dot + 1);
+                    if (vlan_id > 0 && vlan_id < 4096) {
+                        kcontext_printf(context, "create sub %s %d\n", parent, vlan_id);
+                    }
+                }
+            }
+        }
+        sline = strtok(NULL, "\n");
+    }
+    
+    kcontext_printf(context, "!\n");
+    
+    /* Show interface configuration */
+    const char *addrs = vpp_exec_cli("show interface addr");
+    char addr_buf[BUFFER_SIZE];
+    strncpy(addr_buf, addrs, BUFFER_SIZE - 1);
+    addr_buf[BUFFER_SIZE - 1] = 0;
+    
+    char *line = strtok(addr_buf, "\n");
+    char current_iface[64] = {0};
+    int skip_iface = 0;
+    while (line) {
+        if (line[0] != ' ' && strchr(line, '(')) {
+            sscanf(line, "%63s", current_iface);
+            skip_iface = (strncmp(current_iface, "tap", 3) == 0 ||
+                         strcmp(current_iface, "local0") == 0);
+            
+            if (!skip_iface && strstr(line, "(up)") && current_iface[0]) {
+                kcontext_printf(context, "!\ninterface %s\n", current_iface);
+                kcontext_printf(context, " no shutdown\n");
+            } else if (!skip_iface && current_iface[0]) {
+                kcontext_printf(context, "!\ninterface %s\n", current_iface);
+                kcontext_printf(context, " shutdown\n");
+            }
+        } else if (strstr(line, "L3 ") && current_iface[0] && !skip_iface) {
+            char *ip_start = strstr(line, "L3 ");
+            if (ip_start) {
+                ip_start += 3;
+                char ip[48] = {0};
+                sscanf(ip_start, "%47s", ip);
+                kcontext_printf(context, " ip address %s\n", ip);
+            }
+        }
+        line = strtok(NULL, "\n");
+    }
+    
+    /* Show LCP */
+    kcontext_printf(context, "!\n");
+    const char *lcp = vpp_exec_cli("show lcp");
+    char lcp_buf[BUFFER_SIZE];
+    strncpy(lcp_buf, lcp, BUFFER_SIZE - 1);
+    lcp_buf[BUFFER_SIZE - 1] = 0;
+    
+    line = strtok(lcp_buf, "\n");
+    while (line) {
+        if (strstr(line, "itf-pair:")) {
+            int idx;
+            char vpp_if[64], tap_if[64], host_if[32];
+            if (sscanf(line, "itf-pair: [%d] %63s %63s %31s", &idx, vpp_if, tap_if, host_if) >= 4) {
+                kcontext_printf(context, "lcp create %s host-if %s\n", vpp_if, host_if);
+            }
+        }
+        line = strtok(NULL, "\n");
+    }
+    
+    kcontext_printf(context, "!\nend\n");
     return 0;
 }
 
