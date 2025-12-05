@@ -841,7 +841,15 @@ int vpp_lcp_delete_current(kcontext_t *context) {
 
 /* Create loopback interface */
 int vpp_create_loopback(kcontext_t *context) {
-    const char *result = vpp_exec_cli("create loopback interface\n");
+    const char *instance = get_param(context, "instance");
+    char cmd[256];
+    
+    if (instance && strlen(instance) > 0) {
+        snprintf(cmd, sizeof(cmd), "create loopback interface instance %s", instance);
+    } else {
+        snprintf(cmd, sizeof(cmd), "create loopback interface");
+    }
+    const char *result = vpp_exec_cli(cmd);
     kcontext_printf(context, "%s", result);
     return 0;
 }
@@ -988,7 +996,13 @@ int vpp_write_memory(kcontext_t *context) {
         if (iline[0] != ' ' && strncmp(iline, "loop", 4) == 0) {
             char name[64];
             if (sscanf(iline, "%63s", name) == 1) {
-                fprintf(fp, "create loopback interface\n");
+                /* Extract instance number from loop name (e.g., loop100 -> 100) */
+                int instance = 0;
+                if (sscanf(name, "loop%d", &instance) == 1) {
+                    fprintf(fp, "create loopback interface instance %d\n", instance);
+                } else {
+                    fprintf(fp, "create loopback interface\n");
+                }
                 loop_count++;
             }
         }
