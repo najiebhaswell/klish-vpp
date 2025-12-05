@@ -4,9 +4,9 @@ After=vpp.service network.target
 Wants=vpp.service
 
 [Service]
-Type=forking
-ExecStart=/usr/local/bin/klishd -d
-TimeoutStartSec=5
+Type=simple
+ExecStart=/usr/local/bin/klishd-wrapper
+ExecStop=/usr/bin/pkill -x klishd
 Restart=on-failure
 RestartSec=5
 

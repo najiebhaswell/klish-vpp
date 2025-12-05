@@ -1,0 +1,9 @@
+#!/bin/bash
+# Wrapper to keep klishd running under systemd
+/usr/local/bin/klishd -d
+# Wait for klishd to be ready
+sleep 1
+# Keep this script running while klishd daemon is alive
+while pgrep -x klishd > /dev/null; do
+    sleep 5
+done
