@@ -411,14 +411,14 @@ int vpp_show_interfaces(kcontext_t *context) {
     }
     
     /* Print header */
-    kcontext_printf(context, "%-16s %-20s %-6s %-6s %s\n",
+    kcontext_printf(context, "%-32s %-20s %5s %-6s %-8s\n",
         "Interface", "IP-Address", "MTU", "Status", "Protocol");
     
     /* Print formatted table */
     for (int i = 0; i < iface_count; i++) {
         if (interfaces[i].ip_count == 0) {
             /* No IP assigned */
-            kcontext_printf(context, "%-16s %-20s %-6d %-6s %s\n",
+            kcontext_printf(context, "%-32s %-20s %5d %-6s %-8s\n",
                 interfaces[i].name,
                 "unassigned",
                 interfaces[i].mtu,
@@ -426,17 +426,16 @@ int vpp_show_interfaces(kcontext_t *context) {
                 interfaces[i].is_up ? "up" : "down");
         } else {
             /* First IP with interface name */
-            kcontext_printf(context, "%-16s %-20s %-6d %-6s %s\n",
+            kcontext_printf(context, "%-32s %-20s %5d %-6s %-8s\n",
                 interfaces[i].name,
                 interfaces[i].ips[0],
                 interfaces[i].mtu,
                 interfaces[i].is_up ? "up" : "down",
                 interfaces[i].is_up ? "up" : "down");
             
-            /* Additional IPs on separate lines with blank interface name */
+            /* Additional IPs on separate lines */
             for (int j = 1; j < interfaces[i].ip_count; j++) {
-                kcontext_printf(context, "%-16s %-20s\n",
-                    "",
+                kcontext_printf(context, "%-32s %-20s\n", "",
                     interfaces[i].ips[j]);
             }
         }

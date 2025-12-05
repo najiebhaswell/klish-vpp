@@ -19,8 +19,8 @@ A Cisco IOS-style command-line interface for managing VPP (Vector Packet Process
 
 ```bash
 # Download and install
-wget https://github.com/najiebhaswell/klish-vpp/raw/main/klish-vpp_1.0.4_amd64.deb
-sudo dpkg -i klish-vpp_1.0.4_amd64.deb
+wget https://github.com/najiebhaswell/klish-vpp/raw/main/klish-vpp_1.0.5_amd64.deb
+sudo dpkg -i klish-vpp_1.0.5_amd64.deb
 
 # Start the CLI daemon
 sudo systemctl start klishd
