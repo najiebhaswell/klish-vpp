@@ -1,9 +1,8 @@
-#!/bin/bash
 # Wrapper to keep klishd running under systemd
-/usr/local/bin/klishd -d
-# Wait for klishd to be ready
-sleep 1
-# Keep this script running while klishd daemon is alive
-while pgrep -x klishd > /dev/null; do
-    sleep 5
-done
+
+# Create socket directory if it doesn't exist
+mkdir -p /var/run/klish
+chmod 755 /var/run/klish
+
+# Start klishd with config file
+exec /usr/local/bin/klishd -c /etc/klish/klishd.conf
