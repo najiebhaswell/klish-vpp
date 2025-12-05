@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KLISH xmlns="https://klish.libcode.org/klish3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+<PLUGIN name="klish"/><PLUGIN name="script"/><PLUGIN name="vpp"/>
+
+<PTYPE name="STRING"><ACTION sym="STRING@klish"/></PTYPE>
+<PTYPE name="IFACE"><ACTION sym="STRING@klish"/><COMPL><ACTION sym="vpp_complete_interface@vpp"/></COMPL></PTYPE>
+<PTYPE name="IP_PREFIX"><ACTION sym="STRING@klish"/></PTYPE>
+<PTYPE name="UINT"><ACTION sym="UINT@klish"/></PTYPE>
+
+<VIEW name="main">
+<PROMPT name="prompt"><ACTION sym="prompt">%h> </ACTION></PROMPT>
+<COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
+<COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
+<COMMAND name="show-ip-route" help="Show routes"><ACTION sym="vpp_show_ip_route@vpp"/></COMMAND>
+<COMMAND name="show-hardware" help="Show hardware"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
+<COMMAND name="show-lcp" help="Show LCP"><ACTION sym="vpp_show_lcp@vpp"/></COMMAND>
+<COMMAND name="enable" help="Privileged mode"><ACTION sym="nav">push /enable-view</ACTION></COMMAND>
+<COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
+</VIEW>
+
+<VIEW name="enable-view">
+<PROMPT name="prompt"><ACTION sym="prompt">%h# </ACTION></PROMPT>
+<COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
+<COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
+<COMMAND name="show-ip-route" help="Show routes"><ACTION sym="vpp_show_ip_route@vpp"/></COMMAND>
+<COMMAND name="show-hardware" help="Show hardware"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
+<COMMAND name="show-lcp" help="Show LCP"><ACTION sym="vpp_show_lcp@vpp"/></COMMAND>
+<COMMAND name="configure" help="Config mode"><ACTION sym="nav">push /config-view</ACTION></COMMAND>
+<COMMAND name="ping" help="Ping"><PARAM name="target" ptype="/IP_PREFIX" help="Target"/><ACTION sym="vpp_ping@vpp"/></COMMAND>
+<COMMAND name="write-memory" help="Save config"><ACTION sym="vpp_write_memory@vpp"/></COMMAND>
+<COMMAND name="disable" help="User mode"><ACTION sym="nav">pop</ACTION></COMMAND>
+<COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
+</VIEW>
+
+<VIEW name="config-view">
+<PROMPT name="prompt"><ACTION sym="prompt">%h(config)# </ACTION></PROMPT>
+<COMMAND name="interface" help="Configure interface">
+    <PARAM name="interface" ptype="/IFACE" help="Interface name"/>
+    <ACTION sym="vpp_enter_interface@vpp"/><ACTION sym="nav">push /interface-view</ACTION>
+</COMMAND>
+<COMMAND name="create-loopback" help="Create loopback"><ACTION sym="vpp_create_loopback@vpp"/></COMMAND>
+<COMMAND name="create-tap" help="Create tap"><PARAM name="name" ptype="/STRING" help="Name" optional="true"/><ACTION sym="vpp_create_tap@vpp"/></COMMAND>
+<COMMAND name="lcp-create" help="Create LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="hostif" ptype="/STRING" help="Host-if"/><ACTION sym="vpp_lcp_create@vpp"/></COMMAND>
+<COMMAND name="lcp-delete" help="Delete LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><ACTION sym="vpp_lcp_delete@vpp"/></COMMAND>
+<COMMAND name="create-subinterface" help="Create VLAN"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="subid" ptype="/UINT" help="Sub-ID"/><PARAM name="vlanid" ptype="/UINT" help="VLAN-ID"/><ACTION sym="vpp_create_subinterface@vpp"/></COMMAND>
+<COMMAND name="ip-route" help="Add route"><PARAM name="network" ptype="/IP_PREFIX" help="Network"/><PARAM name="mask" ptype="/IP_PREFIX" help="Mask"/><PARAM name="gateway" ptype="/IP_PREFIX" help="Gateway"/><ACTION sym="vpp_add_ip_route@vpp"/></COMMAND>
+<COMMAND name="end" help="Back to enable"><ACTION sym="nav">pop</ACTION></COMMAND>
+<COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
+</VIEW>
+
+<VIEW name="interface-view">
+<PROMPT name="prompt"><ACTION sym="prompt">%h(config-if)# </ACTION></PROMPT>
+<COMMAND name="ip" help="Set IPv4 address"><PARAM name="address" ptype="/IP_PREFIX" help="Address (x.x.x.x/y)"/><ACTION sym="vpp_config_interface_ip@vpp"/></COMMAND>
+<COMMAND name="ipv6" help="Set IPv6 address"><PARAM name="address" ptype="/IP_PREFIX" help="Address (x::x/y)"/><ACTION sym="vpp_config_interface_ipv6@vpp"/></COMMAND>
+<COMMAND name="no-ip" help="Remove IPv4"><PARAM name="address" ptype="/IP_PREFIX" help="Address"/><ACTION sym="vpp_no_interface_ip@vpp"/></COMMAND>
+<COMMAND name="no-ipv6" help="Remove IPv6"><PARAM name="address" ptype="/IP_PREFIX" help="Address"/><ACTION sym="vpp_no_interface_ipv6@vpp"/></COMMAND>
+<COMMAND name="mtu" help="Set MTU"><PARAM name="mtu" ptype="/UINT" help="MTU value"/><ACTION sym="vpp_set_mtu@vpp"/></COMMAND>
+<COMMAND name="lcp" help="Create LCP"><PARAM name="hostif" ptype="/STRING" help="Host interface"/><ACTION sym="vpp_lcp_create_current@vpp"/></COMMAND>
+<COMMAND name="no-lcp" help="Remove LCP"><ACTION sym="vpp_lcp_delete_current@vpp"/></COMMAND>
+<COMMAND name="enable" help="Enable interface"><ACTION sym="vpp_interface_up@vpp"/></COMMAND>
+<COMMAND name="disable" help="Disable interface"><ACTION sym="vpp_interface_down@vpp"/></COMMAND>
+<COMMAND name="exit" help="Back to config"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">pop</ACTION></COMMAND>
+<COMMAND name="end" help="Back to enable"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">top /enable-view</ACTION></COMMAND>
+</VIEW>
+
+</KLISH>
