@@ -4,12 +4,13 @@ A Cisco-style CLI interface for VPP (Vector Packet Processing) using Klish3 fram
 
 ## Features
 
-- **Cisco-like CLI** - Familiar command structure (enable, configure, interface)
+- **Cisco-like CLI** - Familiar command structure (configure, interface)
 - **Interface Configuration** - IP addresses, MTU, enable/disable
+- **VLAN Subinterfaces** - Auto-create with 
 - **LCP (Linux Control Plane)** - Create tap interfaces for Linux integration
 - **Tab Completion** - Dynamic interface name completion
-- **Config Persistence** - Save and restore configuration across restarts
-- **Systemd Integration** - Auto-start and config loading
+- **Config Persistence** - Save and auto-load configuration
+- **Show Running Config** - Display current configuration in Cisco format
 
 ## Requirements
 
@@ -53,35 +54,24 @@ sudo mkdir -p /usr/local/share/klish/xml
 sudo cp /path/to/klish-vpp/vpp-cli.xml /usr/local/share/klish/xml/
 ```
 
-### 5. Install Systemd Service
+### 5. Configure VPP Startup Config
 
-```bash
-sudo cat > /etc/systemd/system/klishd.service << 'SVCEOF'
-[Unit]
-Description=Klish CLI Daemon for VPP
-After=vpp.service network.target
-Requires=vpp.service
+Add to `/etc/vpp/startup.conf` in the `unix` section:
 
-[Service]
-Type=simple
-ExecStartPre=/bin/sleep 3
-ExecStart=/usr/local/bin/klishd
-ExecStartPost=/bin/bash -c 'sleep 2 && [ -f /etc/vpp/klish-startup.conf ] && vppctl exec /etc/vpp/klish-startup.conf || true'
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-SVCEOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable klishd.service
+```
+unix {
+  startup-config /etc/vpp/klish-startup.conf
+  ...
+}
 ```
 
-### 6. Start Service
+### 6. Install Systemd Service
 
 ```bash
-sudo systemctl start klishd
+sudo cp klishd.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable klishd.service
+sudo systemctl start klishd.service
 ```
 
 ## Usage
@@ -95,54 +85,48 @@ sudo klish
 ### Basic Commands
 
 ```
-hostname> show-interfaces          # Show all interfaces with IP/MTU
-hostname> show-version             # Show VPP version
-hostname> enable                   # Enter privileged mode
-hostname# configure                # Enter config mode
-hostname(config)# interface loop0  # Configure interface
+hostname# show-interfaces
+hostname# show-running-config
+hostname# show-version
+hostname# configure
+hostname(config)# interface BondEthernet0.100    # Auto-creates VLAN subinterface
 hostname(config-if)# ip 10.0.0.1/24
 hostname(config-if)# ipv6 2001:db8::1/64
 hostname(config-if)# mtu 1500
 hostname(config-if)# enable
-hostname(config-if)# lcp lo0       # Create LCP tap
+hostname(config-if)# lcp bond0.100               # Create LCP tap
 hostname(config-if)# exit
 hostname(config)# end
-hostname# write-memory             # Save configuration
+hostname# write-memory                           # Save configuration
 ```
 
-### Interface View Commands
+### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `ip <addr/prefix>` | Set IPv4 address |
-| `ipv6 <addr/prefix>` | Set IPv6 address |
-| `no-ip <addr/prefix>` | Remove IPv4 address |
-| `no-ipv6 <addr/prefix>` | Remove IPv6 address |
-| `mtu <value>` | Set MTU |
-| `enable` | Bring interface up |
-| `disable` | Bring interface down |
-| `lcp <host-if>` | Create LCP tap interface |
-| `no-lcp` | Remove LCP tap |
-| `exit` | Back to config mode |
-| `end` | Back to enable mode |
-
-### Config Mode Commands
-
-| Command | Description |
-|---------|-------------|
-| `interface <name>` | Configure interface (Tab for completion) |
-| `create-loopback` | Create loopback interface |
-| `lcp-create <if> <host-if>` | Create LCP for interface |
-| `create-subinterface <if> <subid> <vlan>` | Create VLAN subinterface |
+| Mode | Command | Description |
+|------|---------|-------------|
+| Main | `show-interfaces` | Show all interfaces |
+| Main | `show-running-config` | Show running configuration |
+| Main | `show-version` | Show VPP version |
+| Main | `show-lcp` | Show LCP mappings |
+| Main | `ping <target>` | Ping target |
+| Main | `write-memory` | Save configuration |
+| Main | `configure` | Enter config mode |
+| Config | `interface <name>` | Configure interface (Tab for completion) |
+| Config | `create-loopback` | Create loopback interface |
+| Interface | `ip <addr/prefix>` | Set IPv4 address |
+| Interface | `ipv6 <addr/prefix>` | Set IPv6 address |
+| Interface | `mtu <value>` | Set MTU |
+| Interface | `enable` / `disable` | Bring interface up/down |
+| Interface | `lcp <host-if>` | Create LCP tap interface |
 
 ## Configuration Persistence
 
-Save running configuration:
-```
+```bash
+# Save running configuration
 hostname# write-memory
 ```
 
-Configuration is saved to `/etc/vpp/klish-startup.conf` and automatically loaded when klishd service starts.
+Configuration is saved to `/etc/vpp/klish-startup.conf` and automatically loaded by VPP on startup (via native startup-config).
 
 ## Files
 
@@ -153,18 +137,20 @@ Configuration is saved to `/etc/vpp/klish-startup.conf` and automatically loaded
 | `/usr/local/lib/libklish-plugin-vpp.so` | VPP plugin |
 | `/usr/local/share/klish/xml/vpp-cli.xml` | CLI definition |
 | `/etc/vpp/klish-startup.conf` | Saved configuration |
-| `/etc/systemd/system/klishd.service` | Systemd service |
+| `/etc/vpp/startup.conf` | VPP startup config |
 
 ## Troubleshooting
 
 ### Check service status
 ```bash
 sudo systemctl status klishd
+sudo systemctl status vpp
 ```
 
 ### View logs
 ```bash
 sudo journalctl -u klishd -f
+sudo journalctl -u vpp -f
 ```
 
 ### Test VPP connection
