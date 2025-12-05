@@ -615,12 +615,41 @@ int vpp_interface_down(kcontext_t *context) {
 /* Enter interface configuration mode - stores interface name */
 int vpp_enter_interface(kcontext_t *context) {
     const char *iface = get_param(context, "interface");
+    char cmd[256];
     
     fprintf(stderr, "DEBUG: vpp_enter_interface called, iface=%s\n", iface ? iface : "NULL");
     
     if (!iface) {
         kcontext_printf(context, "Error: Interface name required\n");
         return -1;
+    }
+    
+    /* Check if it's a VLAN subinterface (contains a dot) */
+    const char *dot = strchr(iface, '.');
+    if (dot) {
+        /* Parse parent interface and VLAN ID */
+        char parent[64] = {0};
+        int vlan_id = 0;
+        
+        size_t parent_len = dot - iface;
+        if (parent_len >= sizeof(parent)) parent_len = sizeof(parent) - 1;
+        strncpy(parent, iface, parent_len);
+        parent[parent_len] = 0;
+        
+        vlan_id = atoi(dot + 1);
+        
+        if (vlan_id > 0 && vlan_id < 4096) {
+            /* Create subinterface: create sub <parent> <vlan_id> */
+            snprintf(cmd, sizeof(cmd), "create sub %s %d", parent, vlan_id);
+            const char *result = vpp_exec_cli(cmd);
+            
+            /* Check if created or already exists */
+            if (strstr(result, iface) || strlen(result) == 0 || strstr(result, "already exists")) {
+                kcontext_printf(context, "VLAN subinterface %s created\n", iface);
+            } else if (strlen(result) > 0) {
+                kcontext_printf(context, "%s", result);
+            }
+        }
     }
     
     set_current_interface(iface);
@@ -881,6 +910,36 @@ int vpp_write_memory(kcontext_t *context) {
             }
         }
         bline = strtok(NULL, "\n");
+    }
+    
+    /* Third: Create VLAN subinterfaces */
+    fprintf(fp, "\n# VLAN subinterfaces\n");
+    const char *sub_list = vpp_exec_cli("show interface");
+    char sub_buf[BUFFER_SIZE];
+    strncpy(sub_buf, sub_list, BUFFER_SIZE - 1);
+    sub_buf[BUFFER_SIZE - 1] = 0;
+    
+    char *sline = strtok(sub_buf, "\n");
+    while (sline) {
+        if (sline[0] != ' ') {
+            char name[64] = {0};
+            if (sscanf(sline, "%63s", name) == 1) {
+                /* Check if it's a subinterface (contains dot) and not tap */
+                char *dot = strchr(name, '.');
+                if (dot && strncmp(name, "tap", 3) != 0) {
+                    char parent[64] = {0};
+                    int vlan_id = 0;
+                    size_t plen = dot - name;
+                    if (plen >= sizeof(parent)) plen = sizeof(parent) - 1;
+                    strncpy(parent, name, plen);
+                    vlan_id = atoi(dot + 1);
+                    if (vlan_id > 0 && vlan_id < 4096) {
+                        fprintf(fp, "create sub %s %d\n", parent, vlan_id);
+                    }
+                }
+            }
+        }
+        sline = strtok(NULL, "\n");
     }
     
     fprintf(fp, "\n# Interface configuration\n");
