@@ -5,6 +5,7 @@
 
 <PTYPE name="STRING"><ACTION sym="STRING@klish"/></PTYPE>
 <PTYPE name="IFACE"><ACTION sym="STRING@klish"/><COMPL><ACTION sym="vpp_complete_interface@vpp"/></COMPL></PTYPE>
+<PTYPE name="IFACE_OR_NEW"><ACTION sym="STRING@klish"/><COMPL><ACTION sym="vpp_complete_interface@vpp"/></COMPL></PTYPE>
 <PTYPE name="IP_PREFIX"><ACTION sym="STRING@klish"/></PTYPE>
 <PTYPE name="UINT"><ACTION sym="UINT@klish"/></PTYPE>
 
@@ -25,7 +26,7 @@
 <VIEW name="config-view">
 <PROMPT name="prompt"><ACTION sym="prompt">%h(config)# </ACTION></PROMPT>
 <COMMAND name="interface" help="Configure interface (auto-creates loopback/VLAN)">
-    <PARAM name="interface" ptype="/STRING" help="Interface name (e.g. loop100, BondEthernet0.100)"/>
+    <PARAM name="interface" ptype="/IFACE_OR_NEW" help="Interface name"/>
     <ACTION sym="vpp_enter_interface@vpp"/><ACTION sym="nav">push /interface-view</ACTION>
 </COMMAND>
 <COMMAND name="no" help="Delete/negate commands">

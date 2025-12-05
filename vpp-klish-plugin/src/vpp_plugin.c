@@ -595,10 +595,11 @@ int vpp_config_interface_ip(kcontext_t *context) {
         return -1;
     }
     
-    snprintf(cmd, sizeof(cmd), "set interface ip address %s %s\n", iface, ip_prefix);
+    snprintf(cmd, sizeof(cmd), "set interface ip address %s %s", iface, ip_prefix);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0 && strstr(result, "error") != NULL) {
+    if (strlen(result) > 0 && (strstr(result, "error") != NULL || strstr(result, "failed") != NULL || strstr(result, "conflict") != NULL)) {
         kcontext_printf(context, "%s", result);
+        return -1;
     } else {
         kcontext_printf(context, "IP address %s configured on %s\n", ip_prefix, iface);
     }
