@@ -338,13 +338,13 @@ int vpp_show_interfaces(kcontext_t *context) {
         int ip_count;
         int mtu;
         int is_up;
-    } interfaces[32];
+    } interfaces[128];
     int iface_count = 0;
     
     /* Parse interface names, status, and MTU from "show interface" output */
     /* Format: Name  Idx  State  MTU (L3/IP4/IP6/MPLS) */
     char *line = strtok(iface_buf, "\n");
-    while (line && iface_count < 32) {
+    while (line && iface_count < 128) {
         /* Skip header line and empty lines */
         if (strstr(line, "Name") || strlen(line) < 5) {
             line = strtok(NULL, "\n");
