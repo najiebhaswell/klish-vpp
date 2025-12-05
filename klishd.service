@@ -5,9 +5,9 @@ Requires=vpp.service
 
 [Service]
 Type=simple
-ExecStartPre=/bin/sleep 3
+ExecStartPre=/bin/sleep 2
+ExecStartPre=/usr/local/bin/vpp-load-config
 ExecStart=/usr/local/bin/klishd
-ExecStartPost=/bin/bash -c 'sleep 2 && [ -f /etc/vpp/klish-startup.conf ] && vppctl exec /etc/vpp/klish-startup.conf || true'
 Restart=on-failure
 RestartSec=5
 

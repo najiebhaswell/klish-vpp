@@ -843,6 +843,48 @@ int vpp_write_memory(kcontext_t *context) {
     fprintf(fp, "# VPP Klish Configuration - Auto-generated\n");
     fprintf(fp, "# Generated at startup\n\n");
     
+    /* First: Create loopback interfaces */
+    fprintf(fp, "# Loopback interfaces\n");
+    const char *iface_list = vpp_exec_cli("show interface");
+    char iface_buf[BUFFER_SIZE];
+    strncpy(iface_buf, iface_list, BUFFER_SIZE - 1);
+    iface_buf[BUFFER_SIZE - 1] = 0;
+    
+    int loop_count = 0;
+    char *iline = strtok(iface_buf, "\n");
+    while (iline) {
+        if (iline[0] != ' ' && strncmp(iline, "loop", 4) == 0) {
+            char name[64];
+            if (sscanf(iline, "%63s", name) == 1) {
+                fprintf(fp, "create loopback interface\n");
+                loop_count++;
+            }
+        }
+        iline = strtok(NULL, "\n");
+    }
+    
+    /* Second: Create bond interfaces */
+    fprintf(fp, "\n# Bond interfaces\n");
+    const char *bond_info = vpp_exec_cli("show bond");
+    char bond_buf[BUFFER_SIZE];
+    strncpy(bond_buf, bond_info, BUFFER_SIZE - 1);
+    bond_buf[BUFFER_SIZE - 1] = 0;
+    
+    char *bline = strtok(bond_buf, "\n");
+    while (bline) {
+        /* Parse: "BondEthernet0" or similar bond interface info */
+        if (strstr(bline, "BondEthernet")) {
+            int bond_id = -1;
+            if (sscanf(bline, "BondEthernet%d", &bond_id) == 1 || 
+                sscanf(bline, " BondEthernet%d", &bond_id) == 1) {
+                fprintf(fp, "create bond mode lacp load-balance l34\n");
+            }
+        }
+        bline = strtok(NULL, "\n");
+    }
+    
+    fprintf(fp, "\n# Interface configuration\n");
+    
     /* Get and save interface addresses */
     const char *addrs = vpp_exec_cli("show interface addr");
     char addr_buf[BUFFER_SIZE];
