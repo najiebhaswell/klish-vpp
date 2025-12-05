@@ -8,18 +8,8 @@
 <PTYPE name="IP_PREFIX"><ACTION sym="STRING@klish"/></PTYPE>
 <PTYPE name="UINT"><ACTION sym="UINT@klish"/></PTYPE>
 
+<!-- Main View - directly in enable mode -->
 <VIEW name="main">
-<PROMPT name="prompt"><ACTION sym="prompt">%h> </ACTION></PROMPT>
-<COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
-<COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
-<COMMAND name="show-ip-route" help="Show routes"><ACTION sym="vpp_show_ip_route@vpp"/></COMMAND>
-<COMMAND name="show-hardware" help="Show hardware"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
-<COMMAND name="show-lcp" help="Show LCP"><ACTION sym="vpp_show_lcp@vpp"/></COMMAND>
-<COMMAND name="enable" help="Privileged mode"><ACTION sym="nav">push /enable-view</ACTION></COMMAND>
-<COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
-</VIEW>
-
-<VIEW name="enable-view">
 <PROMPT name="prompt"><ACTION sym="prompt">%h# </ACTION></PROMPT>
 <COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
 <COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
@@ -29,10 +19,10 @@
 <COMMAND name="configure" help="Config mode"><ACTION sym="nav">push /config-view</ACTION></COMMAND>
 <COMMAND name="ping" help="Ping"><PARAM name="target" ptype="/IP_PREFIX" help="Target"/><ACTION sym="vpp_ping@vpp"/></COMMAND>
 <COMMAND name="write-memory" help="Save config"><ACTION sym="vpp_write_memory@vpp"/></COMMAND>
-<COMMAND name="disable" help="User mode"><ACTION sym="nav">pop</ACTION></COMMAND>
 <COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
 </VIEW>
 
+<!-- Config View -->
 <VIEW name="config-view">
 <PROMPT name="prompt"><ACTION sym="prompt">%h(config)# </ACTION></PROMPT>
 <COMMAND name="interface" help="Configure interface">
@@ -45,10 +35,11 @@
 <COMMAND name="lcp-delete" help="Delete LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><ACTION sym="vpp_lcp_delete@vpp"/></COMMAND>
 <COMMAND name="create-subinterface" help="Create VLAN"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="subid" ptype="/UINT" help="Sub-ID"/><PARAM name="vlanid" ptype="/UINT" help="VLAN-ID"/><ACTION sym="vpp_create_subinterface@vpp"/></COMMAND>
 <COMMAND name="ip-route" help="Add route"><PARAM name="network" ptype="/IP_PREFIX" help="Network"/><PARAM name="mask" ptype="/IP_PREFIX" help="Mask"/><PARAM name="gateway" ptype="/IP_PREFIX" help="Gateway"/><ACTION sym="vpp_add_ip_route@vpp"/></COMMAND>
-<COMMAND name="end" help="Back to enable"><ACTION sym="nav">pop</ACTION></COMMAND>
-<COMMAND name="exit" help="Exit"><ACTION sym="nav">pop</ACTION></COMMAND>
+<COMMAND name="end" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>
+<COMMAND name="exit" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>
 </VIEW>
 
+<!-- Interface View -->
 <VIEW name="interface-view">
 <PROMPT name="prompt"><ACTION sym="prompt">%h(config-if)# </ACTION></PROMPT>
 <COMMAND name="ip" help="Set IPv4 address"><PARAM name="address" ptype="/IP_PREFIX" help="Address (x.x.x.x/y)"/><ACTION sym="vpp_config_interface_ip@vpp"/></COMMAND>
@@ -61,7 +52,7 @@
 <COMMAND name="enable" help="Enable interface"><ACTION sym="vpp_interface_up@vpp"/></COMMAND>
 <COMMAND name="disable" help="Disable interface"><ACTION sym="vpp_interface_down@vpp"/></COMMAND>
 <COMMAND name="exit" help="Back to config"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">pop</ACTION></COMMAND>
-<COMMAND name="end" help="Back to enable"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">top /enable-view</ACTION></COMMAND>
+<COMMAND name="end" help="Back to main"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">top /main</ACTION></COMMAND>
 </VIEW>
 
 </KLISH>
