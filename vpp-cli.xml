@@ -14,9 +14,14 @@
 <COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
 <COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
 <COMMAND name="show-ip-route" help="Show routes"><ACTION sym="vpp_show_ip_route@vpp"/></COMMAND>
-<COMMAND name="show-hardware" help="Show hardware"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
+<COMMAND name="show-hardware" help="Show hardware interfaces"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
 <COMMAND name="show-lcp" help="Show LCP"><ACTION sym="vpp_show_lcp@vpp"/></COMMAND>
 <COMMAND name="show-running-config" help="Show running configuration"><ACTION sym="vpp_show_running_config@vpp"/></COMMAND>
+<COMMAND name="show-memory-heap" help="Show main heap memory"><ACTION sym="vpp_show_memory_heap@vpp"/></COMMAND>
+<COMMAND name="show-memory-map" help="Show memory map"><ACTION sym="vpp_show_memory_map@vpp"/></COMMAND>
+<COMMAND name="show-buffers" help="Show buffer pools"><ACTION sym="vpp_show_buffers@vpp"/></COMMAND>
+<COMMAND name="show-trace" help="Show packet trace"><ACTION sym="vpp_show_trace@vpp"/></COMMAND>
+<COMMAND name="show-error" help="Show error counters"><ACTION sym="vpp_show_error@vpp"/></COMMAND>
 <COMMAND name="configure" help="Config mode"><ACTION sym="nav">push /config-view</ACTION></COMMAND>
 <COMMAND name="ping" help="Ping"><PARAM name="target" ptype="/IP_PREFIX" help="Target"/><ACTION sym="vpp_ping@vpp"/></COMMAND>
 <COMMAND name="write-memory" help="Save config"><ACTION sym="vpp_write_memory@vpp"/></COMMAND>

@@ -1324,6 +1324,42 @@ int vpp_complete_interface(kcontext_t *context) {
 
 
 /* Plugin initialization */
+
+/* Show memory main-heap */
+int vpp_show_memory_heap(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show memory main-heap\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
+/* Show memory map */
+int vpp_show_memory_map(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show memory map\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
+/* Show buffers */
+int vpp_show_buffers(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show buffers\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
+/* Show trace */
+int vpp_show_trace(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show trace\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
+/* Show error */
+int vpp_show_error(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show error\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
 int kplugin_vpp_init(kcontext_t *context) {
     kplugin_t *plugin = NULL;
 
@@ -1366,6 +1402,11 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_delete_loopback", vpp_delete_loopback));
     kplugin_add_syms(plugin, ksym_new("vpp_no_interface", vpp_no_interface));
     kplugin_add_syms(plugin, ksym_new("vpp_complete_interface", vpp_complete_interface));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_memory_heap", vpp_show_memory_heap));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_memory_map", vpp_show_memory_map));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_buffers", vpp_show_buffers));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_trace", vpp_show_trace));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_error", vpp_show_error));
 
     /* Check if VPP is running */
     if (access(VPP_CLI_SOCKET, F_OK) != 0) {
