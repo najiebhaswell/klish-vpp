@@ -24,8 +24,8 @@
 
 <VIEW name="config-view">
 <PROMPT name="prompt"><ACTION sym="prompt">%h(config)# </ACTION></PROMPT>
-<COMMAND name="interface" help="Configure interface">
-    <PARAM name="interface" ptype="/IFACE" help="Interface name"/>
+<COMMAND name="interface" help="Configure interface (auto-creates loopback/VLAN)">
+    <PARAM name="interface" ptype="/STRING" help="Interface name (e.g. loop100, BondEthernet0.100)"/>
     <ACTION sym="vpp_enter_interface@vpp"/><ACTION sym="nav">push /interface-view</ACTION>
 </COMMAND>
 <COMMAND name="no" help="Delete/negate commands">
@@ -34,14 +34,8 @@
         <ACTION sym="vpp_no_interface@vpp"/>
     </COMMAND>
 </COMMAND>
-<COMMAND name="create-loopback" help="Create loopback">
-    <PARAM name="instance" ptype="/UINT" help="Instance number (0-4095)" optional="true"/>
-    <ACTION sym="vpp_create_loopback@vpp"/>
-</COMMAND>
-<COMMAND name="create-tap" help="Create tap"><PARAM name="name" ptype="/STRING" help="Name" optional="true"/><ACTION sym="vpp_create_tap@vpp"/></COMMAND>
 <COMMAND name="lcp-create" help="Create LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="hostif" ptype="/STRING" help="Host-if"/><ACTION sym="vpp_lcp_create@vpp"/></COMMAND>
 <COMMAND name="lcp-delete" help="Delete LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><ACTION sym="vpp_lcp_delete@vpp"/></COMMAND>
-<COMMAND name="create-subinterface" help="Create VLAN"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="subid" ptype="/UINT" help="Sub-ID"/><PARAM name="vlanid" ptype="/UINT" help="VLAN-ID"/><ACTION sym="vpp_create_subinterface@vpp"/></COMMAND>
 <COMMAND name="ip-route" help="Add route"><PARAM name="network" ptype="/IP_PREFIX" help="Network"/><PARAM name="mask" ptype="/IP_PREFIX" help="Mask"/><PARAM name="gateway" ptype="/IP_PREFIX" help="Gateway"/><ACTION sym="vpp_add_ip_route@vpp"/></COMMAND>
 <COMMAND name="end" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>
 <COMMAND name="exit" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>

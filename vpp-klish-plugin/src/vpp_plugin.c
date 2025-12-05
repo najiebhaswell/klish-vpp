@@ -727,9 +727,27 @@ int vpp_enter_interface(kcontext_t *context) {
         return -1;
     }
     
+    /* Check if it's a loopback interface (starts with 'loop') */
+    if (strncmp(iface, "loop", 4) == 0) {
+        int instance = 0;
+        if (sscanf(iface, "loop%d", &instance) == 1) {
+            /* Create loopback with specific instance number */
+            snprintf(cmd, sizeof(cmd), "create loopback interface instance %d", instance);
+            const char *result = vpp_exec_cli(cmd);
+            
+            /* Check if created or already exists */
+            if (strstr(result, iface) || strlen(result) == 0) {
+                kcontext_printf(context, "Loopback interface %s created\n", iface);
+            } else if (strstr(result, "already exists") || strstr(result, "is in use")) {
+                /* Already exists - OK */
+            } else if (strlen(result) > 0) {
+                kcontext_printf(context, "%s", result);
+            }
+        }
+    }
     /* Check if it's a VLAN subinterface (contains a dot) */
-    const char *dot = strchr(iface, '.');
-    if (dot) {
+    else if (strchr(iface, '.') != NULL) {
+        const char *dot = strchr(iface, '.');
         /* Parse parent interface and VLAN ID */
         char parent[64] = {0};
         int vlan_id = 0;
