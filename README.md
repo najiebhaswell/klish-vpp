@@ -1,3 +1,6 @@
+> ⚠️ **WARNING: This project is under active development and NOT recommended for production use.**
+> Use at your own risk. APIs and features may change without notice.
+
 # Klish-VPP: Cisco-like CLI for VPP
 
 A Cisco IOS-style command-line interface for managing VPP (Vector Packet Processing) dataplane.
