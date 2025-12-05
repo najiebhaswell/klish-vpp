@@ -1,8 +1,8 @@
-# Wrapper to keep klishd running under systemd
+# Wrapper to run klishd under systemd
 
-# Create socket directory if it doesn't exist
+# Create socket directory if not exists
 mkdir -p /var/run/klish
 chmod 755 /var/run/klish
 
-# Start klishd with config file
-exec /usr/local/bin/klishd -c /etc/klish/klishd.conf
+# Start klishd in daemon mode (reads config from /etc/klish/klishd.conf)
+exec /usr/local/bin/klishd -d
