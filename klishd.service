@@ -1,15 +1,12 @@
 [Unit]
 Description=Klish CLI Daemon for VPP
 After=vpp.service network.target
-Requires=vpp.service
-BindsTo=vpp.service
-PartOf=vpp.service
+Wants=vpp.service
 
 [Service]
 Type=forking
-ExecStartPre=/bin/sleep 2
-ExecStartPre=/usr/local/bin/vpp-load-config
 ExecStart=/usr/local/bin/klishd -d
+TimeoutStartSec=5
 Restart=on-failure
 RestartSec=5
 

@@ -1191,12 +1191,69 @@ int vpp_delete_subinterface(kcontext_t *context) {
         return -1;
     }
     
-    snprintf(cmd, sizeof(cmd), "delete sub %s\n", iface);
+    snprintf(cmd, sizeof(cmd), "delete sub %s", iface);
     const char *result = vpp_exec_cli(cmd);
     if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Subinterface deleted: %s\n", iface);
+    }
+    return 0;
+}
+
+/* Delete loopback interface */
+int vpp_delete_loopback(kcontext_t *context) {
+    const char *iface = get_param(context, "interface");
+    char cmd[256];
+    
+    if (!iface) {
+        kcontext_printf(context, "Error: Loopback interface name required\n");
+        return -1;
+    }
+    
+    /* Check if it's a loopback interface */
+    if (strncmp(iface, "loop", 4) != 0) {
+        kcontext_printf(context, "Error: %s is not a loopback interface\n", iface);
+        return -1;
+    }
+    
+    snprintf(cmd, sizeof(cmd), "delete loopback interface intfc %s", iface);
+    const char *result = vpp_exec_cli(cmd);
+    if (strlen(result) > 0) {
+        kcontext_printf(context, "%s", result);
+    } else {
+        kcontext_printf(context, "Loopback deleted: %s\n", iface);
+    }
+    return 0;
+}
+
+/* Delete any interface (auto-detect type) */
+int vpp_no_interface(kcontext_t *context) {
+    const char *iface = get_param(context, "interface");
+    char cmd[256];
+    
+    if (!iface) {
+        kcontext_printf(context, "Error: Interface name required\n");
+        return -1;
+    }
+    
+    /* Determine interface type and delete accordingly */
+    if (strncmp(iface, "loop", 4) == 0) {
+        /* Loopback interface */
+        snprintf(cmd, sizeof(cmd), "delete loopback interface intfc %s", iface);
+    } else if (strchr(iface, '.') != NULL) {
+        /* VLAN subinterface */
+        snprintf(cmd, sizeof(cmd), "delete sub %s", iface);
+    } else {
+        kcontext_printf(context, "Error: Cannot delete %s - only loopback and VLAN subinterfaces can be deleted\n", iface);
+        return -1;
+    }
+    
+    const char *result = vpp_exec_cli(cmd);
+    if (strlen(result) > 0) {
+        kcontext_printf(context, "%s", result);
+    } else {
+        kcontext_printf(context, "Interface deleted: %s\n", iface);
     }
     return 0;
 }
@@ -1273,6 +1330,8 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_show_lcp", vpp_show_lcp));
     kplugin_add_syms(plugin, ksym_new("vpp_create_subinterface", vpp_create_subinterface));
     kplugin_add_syms(plugin, ksym_new("vpp_delete_subinterface", vpp_delete_subinterface));
+    kplugin_add_syms(plugin, ksym_new("vpp_delete_loopback", vpp_delete_loopback));
+    kplugin_add_syms(plugin, ksym_new("vpp_no_interface", vpp_no_interface));
     kplugin_add_syms(plugin, ksym_new("vpp_complete_interface", vpp_complete_interface));
 
     /* Check if VPP is running */

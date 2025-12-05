@@ -28,6 +28,12 @@
     <PARAM name="interface" ptype="/IFACE" help="Interface name"/>
     <ACTION sym="vpp_enter_interface@vpp"/><ACTION sym="nav">push /interface-view</ACTION>
 </COMMAND>
+<COMMAND name="no" help="Delete/negate commands">
+    <COMMAND name="interface" help="Delete interface (loopback/VLAN only)">
+        <PARAM name="interface" ptype="/IFACE" help="Interface to delete"/>
+        <ACTION sym="vpp_no_interface@vpp"/>
+    </COMMAND>
+</COMMAND>
 <COMMAND name="create-loopback" help="Create loopback"><ACTION sym="vpp_create_loopback@vpp"/></COMMAND>
 <COMMAND name="create-tap" help="Create tap"><PARAM name="name" ptype="/STRING" help="Name" optional="true"/><ACTION sym="vpp_create_tap@vpp"/></COMMAND>
 <COMMAND name="lcp-create" help="Create LCP"><PARAM name="interface" ptype="/IFACE" help="Interface"/><PARAM name="hostif" ptype="/STRING" help="Host-if"/><ACTION sym="vpp_lcp_create@vpp"/></COMMAND>
