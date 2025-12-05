@@ -1360,6 +1360,13 @@ int vpp_show_error(kcontext_t *context) {
     return 0;
 }
 
+/* Show PCI devices */
+int vpp_show_pci(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show pci\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
 int kplugin_vpp_init(kcontext_t *context) {
     kplugin_t *plugin = NULL;
 
@@ -1407,6 +1414,7 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_show_buffers", vpp_show_buffers));
     kplugin_add_syms(plugin, ksym_new("vpp_show_trace", vpp_show_trace));
     kplugin_add_syms(plugin, ksym_new("vpp_show_error", vpp_show_error));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_pci", vpp_show_pci));
 
     /* Check if VPP is running */
     if (access(VPP_CLI_SOCKET, F_OK) != 0) {

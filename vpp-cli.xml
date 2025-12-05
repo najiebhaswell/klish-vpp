@@ -22,6 +22,7 @@
 <COMMAND name="show-buffers" help="Show buffer pools"><ACTION sym="vpp_show_buffers@vpp"/></COMMAND>
 <COMMAND name="show-trace" help="Show packet trace"><ACTION sym="vpp_show_trace@vpp"/></COMMAND>
 <COMMAND name="show-error" help="Show error counters"><ACTION sym="vpp_show_error@vpp"/></COMMAND>
+<COMMAND name="show-pci" help="Show PCI devices"><ACTION sym="vpp_show_pci@vpp"/></COMMAND>
 <COMMAND name="configure" help="Config mode"><ACTION sym="nav">push /config-view</ACTION></COMMAND>
 <COMMAND name="ping" help="Ping"><PARAM name="target" ptype="/IP_PREFIX" help="Target"/><ACTION sym="vpp_ping@vpp"/></COMMAND>
 <COMMAND name="write-memory" help="Save config"><ACTION sym="vpp_write_memory@vpp"/></COMMAND>
