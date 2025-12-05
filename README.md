@@ -1,162 +1,132 @@
-# VPP Klish CLI Plugin
+# Klish-VPP: Cisco-like CLI for VPP
 
-A Cisco-style CLI interface for VPP (Vector Packet Processing) using Klish3 framework.
+A Cisco IOS-style command-line interface for managing VPP (Vector Packet Processing) dataplane.
 
 ## Features
 
-- **Cisco-like CLI** - Familiar command structure (configure, interface)
-- **Interface Configuration** - IP addresses, MTU, enable/disable
-- **VLAN Subinterfaces** - Auto-create with 
-- **LCP (Linux Control Plane)** - Create tap interfaces for Linux integration
-- **Tab Completion** - Dynamic interface name completion
-- **Config Persistence** - Save and auto-load configuration
-- **Show Running Config** - Display current configuration in Cisco format
+- **Interface Management**: Configure IP addresses, MTU, enable/disable interfaces
+- **Show Commands**: View interfaces, routes, hardware, memory, errors, PCI devices
+- **LCP Integration**: Linux Control Plane interface management
+- **Configuration**: Save and restore VPP configuration
+- **Tab Completion**: Auto-complete interface names
+
+## Quick Installation
+
+### From .deb Package (Recommended)
+
+```bash
+# Download and install
+wget https://github.com/najiebhaswell/klish-vpp/raw/main/klish-vpp_1.0.0_amd64.deb
+sudo dpkg -i klish-vpp_1.0.0_amd64.deb
+
+# Start the CLI daemon
+sudo systemctl start klishd
+
+# Access CLI
+sudo klish
+```
+
+### From Source
+
+```bash
+# Clone repository
+git clone https://github.com/najiebhaswell/klish-vpp.git
+cd klish-vpp
+
+# Build dependencies (faux and klish3)
+cd faux && ./configure && make && sudo make install && cd ..
+cd klish3 && ./configure && make && sudo make install && cd ..
+sudo ldconfig
+
+# Build VPP plugin
+cd vpp-klish-plugin && make && sudo make install && cd ..
+
+# Install configuration
+sudo mkdir -p /etc/klish /usr/local/share/klish/xml /var/run/klish
+sudo cp vpp-cli.xml /usr/local/share/klish/xml/
+sudo cp klishd.service /etc/systemd/system/
+sudo cp klishd-wrapper /usr/local/bin/
+
+# Create klishd.conf
+cat << CONF | sudo tee /etc/klish/klishd.conf
+UnixSocketPath=/var/run/klish/klish.sock
+DBs=libxml2
+DB.libxml2.XMLPath=/usr/local/share/klish/xml
+CONF
+
+# Start service
+sudo systemctl daemon-reload
+sudo systemctl enable klishd
+sudo systemctl start klishd
+```
+
+## Available Commands
+
+### Main Mode
+| Command | Description |
+|---------|-------------|
+| `show-interfaces` | Show all interfaces with IP addresses |
+| `show-hardware` | Show hardware interfaces with MAC |
+| `show-version` | Show VPP version |
+| `show-ip-route` | Show IP routing table |
+| `show-lcp` | Show LCP interfaces |
+| `show-running-config` | Show running configuration |
+| `show-memory-heap` | Show main heap memory |
+| `show-memory-map` | Show memory map |
+| `show-buffers` | Show buffer pools |
+| `show-trace` | Show packet trace |
+| `show-error` | Show error counters |
+| `show-pci` | Show PCI devices |
+| `ping <ip>` | Ping target |
+| `write-memory` | Save configuration |
+| `configure` | Enter config mode |
+
+### Config Mode
+| Command | Description |
+|---------|-------------|
+| `interface <name>` | Configure interface (auto-creates loopback/VLAN) |
+| `no interface <name>` | Delete interface |
+| `lcp-create <if> <host>` | Create LCP interface |
+| `lcp-delete <if>` | Delete LCP interface |
+| `ip-route <net> <mask> <gw>` | Add IP route |
+
+### Interface Mode
+| Command | Description |
+|---------|-------------|
+| `ip <addr/prefix>` | Set IPv4 address |
+| `ipv6 <addr/prefix>` | Set IPv6 address |
+| `no-ip <addr/prefix>` | Remove IPv4 address |
+| `no-ipv6 <addr/prefix>` | Remove IPv6 address |
+| `mtu <value>` | Set MTU |
+| `lcp <hostif>` | Create LCP for this interface |
+| `no-lcp` | Remove LCP |
+| `enable` | Enable interface |
+| `disable` | Disable interface |
+
+## Example Usage
+
+```
+debian@server:~$ sudo klish
+server# show-interfaces
+Interface        IP-Address           MTU    Status Protocol
+BondEthernet0    10.10.10.1/24        9000   up     up
+loop0            192.168.1.1/32       9000   up     up
+
+server# configure
+server(config)# interface loop100
+server(config-if)# ip 10.100.0.1/32
+server(config-if)# enable
+server(config-if)# end
+
+server# write-memory
+Configuration saved to /etc/vpp/startup.vpp
+```
 
 ## Requirements
 
 - Debian 12 (Bookworm) or compatible
-- VPP 25.x with LCP plugin
-- Klish3 framework
-- GCC, Make, pkg-config
-
-## Installation
-
-### 1. Install Dependencies
-
-```bash
-apt-get update
-apt-get install -y git build-essential pkg-config libexpat1-dev liblua5.3-dev
-```
-
-### 2. Install Klish3
-
-```bash
-git clone https://github.com/klish-project/klish.git klish3
-cd klish3
-./configure --prefix=/usr/local
-make -j$(nproc)
-sudo make install
-sudo ldconfig
-```
-
-### 3. Build VPP Plugin
-
-```bash
-cd /path/to/klish-vpp/vpp-klish-plugin
-make
-sudo cp libklish-plugin-vpp.so /usr/local/lib/
-```
-
-### 4. Install XML Configuration
-
-```bash
-sudo mkdir -p /usr/local/share/klish/xml
-sudo cp /path/to/klish-vpp/vpp-cli.xml /usr/local/share/klish/xml/
-```
-
-### 5. Configure VPP Startup Config
-
-Add to `/etc/vpp/startup.conf` in the `unix` section:
-
-```
-unix {
-  startup-config /etc/vpp/klish-startup.conf
-  ...
-}
-```
-
-### 6. Install Systemd Service
-
-```bash
-sudo cp klishd.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable klishd.service
-sudo systemctl start klishd.service
-```
-
-## Usage
-
-### Connect to CLI
-
-```bash
-sudo klish
-```
-
-### Basic Commands
-
-```
-hostname# show-interfaces
-hostname# show-running-config
-hostname# show-version
-hostname# configure
-hostname(config)# interface BondEthernet0.100    # Auto-creates VLAN subinterface
-hostname(config-if)# ip 10.0.0.1/24
-hostname(config-if)# ipv6 2001:db8::1/64
-hostname(config-if)# mtu 1500
-hostname(config-if)# enable
-hostname(config-if)# lcp bond0.100               # Create LCP tap
-hostname(config-if)# exit
-hostname(config)# end
-hostname# write-memory                           # Save configuration
-```
-
-### Available Commands
-
-| Mode | Command | Description |
-|------|---------|-------------|
-| Main | `show-interfaces` | Show all interfaces |
-| Main | `show-running-config` | Show running configuration |
-| Main | `show-version` | Show VPP version |
-| Main | `show-lcp` | Show LCP mappings |
-| Main | `ping <target>` | Ping target |
-| Main | `write-memory` | Save configuration |
-| Main | `configure` | Enter config mode |
-| Config | `interface <name>` | Configure interface (Tab for completion) |
-| Config | `create-loopback` | Create loopback interface |
-| Interface | `ip <addr/prefix>` | Set IPv4 address |
-| Interface | `ipv6 <addr/prefix>` | Set IPv6 address |
-| Interface | `mtu <value>` | Set MTU |
-| Interface | `enable` / `disable` | Bring interface up/down |
-| Interface | `lcp <host-if>` | Create LCP tap interface |
-
-## Configuration Persistence
-
-```bash
-# Save running configuration
-hostname# write-memory
-```
-
-Configuration is saved to `/etc/vpp/klish-startup.conf` and automatically loaded by VPP on startup (via native startup-config).
-
-## Files
-
-| Path | Description |
-|------|-------------|
-| `/usr/local/bin/klishd` | Klish daemon |
-| `/usr/local/bin/klish` | Klish client |
-| `/usr/local/lib/libklish-plugin-vpp.so` | VPP plugin |
-| `/usr/local/share/klish/xml/vpp-cli.xml` | CLI definition |
-| `/etc/vpp/klish-startup.conf` | Saved configuration |
-| `/etc/vpp/startup.conf` | VPP startup config |
-
-## Troubleshooting
-
-### Check service status
-```bash
-sudo systemctl status klishd
-sudo systemctl status vpp
-```
-
-### View logs
-```bash
-sudo journalctl -u klishd -f
-sudo journalctl -u vpp -f
-```
-
-### Test VPP connection
-```bash
-vppctl show version
-```
+- VPP 24.x or later (running)
+- libxml2
 
 ## License
 
