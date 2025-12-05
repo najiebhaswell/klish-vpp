@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KLISH
+    xmlns="https://klish.libcode.org/klish3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://src.libcode.org/pkun/klish/src/master/klish.xsd">
+
+<!-- Load plugins -->
+<PLUGIN name="klish"/>
+<PLUGIN name="script"/>
+<PLUGIN name="vpp"/>
+
+<!-- PTYPE definitions -->
+<PTYPE name="STRING">
+    <ACTION sym="STRING@klish"/>
+</PTYPE>
+
+<PTYPE name="IFACE_NAME">
+    <ACTION sym="STRING@klish"/>
+</PTYPE>
+
+<PTYPE name="IPV4_ADDR">
+    <ACTION sym="STRING@klish"/>
+</PTYPE>
+
+<PTYPE name="IPV4_MASK">
+    <ACTION sym="STRING@klish"/>
+</PTYPE>
+
+<!-- User Mode View -->
+<VIEW name="main">
+
+<HOTKEY key="^Z" cmd="end"/>
+
+<PROMPT name="prompt">
+    <ACTION sym="prompt">Router&gt; </ACTION>
+</PROMPT>
+
+<COMMAND name="enable" help="Enter privileged mode">
+    <ACTION sym="nav">push enable-view</ACTION>
+</COMMAND>
+
+<COMMAND name="show" help="Show running system information">
+    <COMMAND name="version" help="Show VPP version information">
+        <ACTION sym="vpp_show_version@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<COMMAND name="exit" help="Exit CLI">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+</VIEW>
+
+<!-- Privileged Mode (Enable) View -->
+<VIEW name="enable-view">
+
+<HOTKEY key="^Z" cmd="end"/>
+
+<PROMPT name="prompt">
+    <ACTION sym="prompt">Router# </ACTION>
+</PROMPT>
+
+<!-- Show commands -->
+<COMMAND name="show" help="Show running system information">
+    
+    <COMMAND name="interfaces" help="Show all interfaces">
+        <ACTION sym="vpp_show_interfaces@vpp"/>
+    </COMMAND>
+
+    <COMMAND name="ip" help="IP information">
+        <COMMAND name="interface" help="IP interface information">
+            <COMMAND name="brief" help="Show IP interface summary">
+                <ACTION sym="vpp_show_ip_interface_brief@vpp"/>
+            </COMMAND>
+        </COMMAND>
+        <COMMAND name="route" help="Show IP routing table">
+            <ACTION sym="vpp_show_ip_route@vpp"/>
+        </COMMAND>
+    </COMMAND>
+
+    <COMMAND name="interface" help="Show interface details">
+        <ACTION sym="vpp_show_interface_detail@vpp"/>
+    </COMMAND>
+
+    <COMMAND name="running-config" help="Show running configuration">
+        <ACTION sym="vpp_show_running_config@vpp"/>
+    </COMMAND>
+
+    <COMMAND name="version" help="Show VPP version">
+        <ACTION sym="vpp_show_version@vpp"/>
+    </COMMAND>
+
+    <COMMAND name="hardware" help="Show hardware interfaces">
+        <ACTION sym="vpp_show_hardware@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<!-- Configuration mode -->
+<COMMAND name="configure" help="Configuration from vty interface">
+    <COMMAND name="terminal" help="Enter configuration mode">
+        <ACTION sym="nav">push config-view</ACTION>
+    </COMMAND>
+</COMMAND>
+
+<!-- Utility commands -->
+<COMMAND name="ping" help="Ping a host">
+    <PARAM name="target" ptype="/IPV4_ADDR" help="Target IP address"/>
+    <ACTION sym="vpp_ping@vpp"/>
+</COMMAND>
+
+<COMMAND name="write" help="Save configuration">
+    <COMMAND name="memory" help="Save configuration to local memory">
+        <ACTION sym="vpp_write_memory@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<COMMAND name="copy" help="Copy configuration">
+    <COMMAND name="running-config" help="Copy running config">
+        <COMMAND name="startup-config" help="Copy to startup config">
+            <ACTION sym="vpp_write_memory@vpp"/>
+        </COMMAND>
+    </COMMAND>
+</COMMAND>
+
+<COMMAND name="disable" help="Return to user mode">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+<COMMAND name="exit" help="Exit to user mode">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+</VIEW>
+
+<!-- Global Configuration Mode -->
+<VIEW name="config-view">
+
+<HOTKEY key="^Z" cmd="end"/>
+
+<PROMPT name="prompt">
+    <ACTION sym="prompt">Router(config)# </ACTION>
+</PROMPT>
+
+<!-- Interface configuration -->
+<COMMAND name="interface" help="Configure an interface">
+    <PARAM name="interface" ptype="/IFACE_NAME" help="Interface name (e.g., loop0, tap0)"/>
+    <ACTION sym="nav">push interface-view</ACTION>
+    
+    <COMMAND name="loopback" help="Create loopback interface">
+        <ACTION sym="vpp_create_loopback@vpp"/>
+    </COMMAND>
+
+    <COMMAND name="tap" help="Create tap interface">
+        <PARAM name="name" ptype="/STRING" help="Tap interface name" optional="true"/>
+        <ACTION sym="vpp_create_tap@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<!-- Static route -->
+<COMMAND name="ip" help="Global IP configuration">
+    <COMMAND name="route" help="Add static IP route">
+        <PARAM name="network" ptype="/IPV4_ADDR" help="Destination network"/>
+        <PARAM name="mask" ptype="/IPV4_MASK" help="Network mask"/>
+        <PARAM name="gateway" ptype="/IPV4_ADDR" help="Next hop address"/>
+        <ACTION sym="vpp_add_ip_route@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<!-- Delete static route -->
+<COMMAND name="no" help="Negate a command or set its defaults">
+    <COMMAND name="ip" help="IP configuration">
+        <COMMAND name="route" help="Remove static IP route">
+            <PARAM name="network" ptype="/IPV4_ADDR" help="Destination network"/>
+            <PARAM name="mask" ptype="/IPV4_MASK" help="Network mask"/>
+            <PARAM name="gateway" ptype="/IPV4_ADDR" help="Next hop address"/>
+            <ACTION sym="vpp_del_ip_route@vpp"/>
+        </COMMAND>
+    </COMMAND>
+</COMMAND>
+
+<COMMAND name="end" help="Return to privileged mode">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+<COMMAND name="exit" help="Exit configuration mode">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+</VIEW>
+
+<!-- Interface Configuration Mode -->
+<VIEW name="interface-view">
+
+<HOTKEY key="^Z" cmd="end"/>
+
+<PROMPT name="prompt">
+    <ACTION sym="prompt">Router(config-if)# </ACTION>
+</PROMPT>
+
+<!-- Set IP address -->
+<COMMAND name="ip" help="Interface IP config">
+    <COMMAND name="address" help="Set IP address">
+        <PARAM name="address" ptype="/IPV4_ADDR" help="IP address"/>
+        <PARAM name="mask" ptype="/IPV4_MASK" help="Subnet mask"/>
+        <ACTION sym="vpp_config_interface_ip@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<!-- No shutdown (bring interface up) -->
+<COMMAND name="no" help="Negate a command or set its defaults">
+    <COMMAND name="shutdown" help="Enable interface">
+        <ACTION sym="vpp_interface_up@vpp"/>
+    </COMMAND>
+</COMMAND>
+
+<!-- Shutdown (bring interface down) -->
+<COMMAND name="shutdown" help="Disable interface">
+    <ACTION sym="vpp_interface_down@vpp"/>
+</COMMAND>
+
+<COMMAND name="exit" help="Exit interface configuration">
+    <ACTION sym="nav">pop</ACTION>
+</COMMAND>
+
+<COMMAND name="end" help="Return to privileged mode">
+    <ACTION sym="nav">pop pop</ACTION>
+</COMMAND>
+
+</VIEW>
+
+</KLISH>
