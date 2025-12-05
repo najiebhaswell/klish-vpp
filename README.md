@@ -134,3 +134,38 @@ Configuration saved to /etc/vpp/startup.vpp
 ## License
 
 MIT License
+
+## Contributing
+
+Contributions are welcome! If you want to participate in this project:
+
+1. **Fork** this repository
+2. **Clone** your fork locally
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/klish-vpp.git
+   ```
+3. **Create a new branch** for your feature
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+4. **Make your changes** and commit
+   ```bash
+   git add .
+   git commit -m "Add: your feature description"
+   ```
+5. **Push** to your fork
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+6. **Create a Pull Request** from your fork to this repository
+
+### Ideas for Contribution
+
+- Add more VPP commands (BGP, MPLS, NAT, etc.)
+- Improve error handling
+- Add unit tests
+- Improve documentation
+- Add support for other Linux distributions
+- Create Docker image
+
+Thank you for your interest in contributing! 🙏
