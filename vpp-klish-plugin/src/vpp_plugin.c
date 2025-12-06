@@ -1047,6 +1047,35 @@ int vpp_write_memory(kcontext_t *context) {
         bline = strtok(NULL, "\n");
     }
     
+    /* Save bond members */
+    fprintf(fp, "\n# Bond members\n");
+    const char *bond_details = vpp_exec_cli("show bond details");
+    char bond_det_buf[BUFFER_SIZE];
+    strncpy(bond_det_buf, bond_details, BUFFER_SIZE - 1);
+    bond_det_buf[BUFFER_SIZE - 1] = 0;
+    
+    char current_bond[64] = {0};
+    char *dline = strtok(bond_det_buf, "\n");
+    while (dline) {
+        if (strncmp(dline, "BondEthernet", 12) == 0) {
+            sscanf(dline, "%63s", current_bond);
+        } else if (strlen(dline) > 4 && dline[0] == ' ' && dline[1] == ' ' &&
+                   dline[2] == ' ' && dline[3] == ' ' &&
+                   (strncmp(dline + 4, "Hundred", 7) == 0 ||
+                    strncmp(dline + 4, "Ten", 3) == 0 ||
+                    strncmp(dline + 4, "Forty", 5) == 0 ||
+                    strncmp(dline + 4, "Gigabit", 7) == 0 ||
+                    strncmp(dline + 4, "Ethernet", 8) == 0)) {
+            char member[64] = {0};
+            sscanf(dline + 4, "%63s", member);
+            if (current_bond[0] && member[0]) {
+                fprintf(fp, "bond add %s %s\n", current_bond, member);
+            }
+        }
+        dline = strtok(NULL, "\n");
+    }
+
+    
     /* Third: Create VLAN subinterfaces */
     fprintf(fp, "\n# VLAN subinterfaces\n");
     const char *sub_list = vpp_exec_cli("show interface");
