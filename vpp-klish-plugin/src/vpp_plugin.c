@@ -1377,11 +1377,14 @@ int vpp_no_interface(kcontext_t *context) {
     if (strncmp(iface, "loop", 4) == 0) {
         /* Loopback interface */
         snprintf(cmd, sizeof(cmd), "delete loopback interface intfc %s", iface);
-    } else if (strchr(iface, '.') != NULL) {
+    } else if (strchr(iface, (int)'.') != NULL) {
         /* VLAN subinterface */
         snprintf(cmd, sizeof(cmd), "delete sub %s", iface);
+    } else if (strncmp(iface, "BondEthernet", 12) == 0) {
+        /* Bond interface */
+        snprintf(cmd, sizeof(cmd), "delete bond %s", iface);
     } else {
-        kcontext_printf(context, "Error: Cannot delete %s - only loopback and VLAN subinterfaces can be deleted\n", iface);
+        kcontext_printf(context, "Error: Cannot delete %s - only loopback, bond, and VLAN can be deleted\n", iface);
         return -1;
     }
     
@@ -1393,7 +1396,6 @@ int vpp_no_interface(kcontext_t *context) {
     }
     return 0;
 }
-
 /* Tab completion for interface names */
 int vpp_complete_interface(kcontext_t *context) {
     char iface_buf[BUFFER_SIZE];
