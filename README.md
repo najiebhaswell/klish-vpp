@@ -8,19 +8,21 @@ A Cisco IOS-style command-line interface for managing VPP (Vector Packet Process
 ## Features
 
 - **Interface Management**: Configure IP addresses, MTU, enable/disable interfaces
-- **Show Commands**: View interfaces, routes, hardware, memory, errors, PCI devices
+- **Bonding Support**: Create bonds, add/remove members, set mode and load-balance
+- **Show Commands**: View interfaces, routes, hardware, memory, errors, PCI devices, bonds
 - **LCP Integration**: Linux Control Plane interface management
 - **Configuration**: Save and restore VPP configuration
 - **Tab Completion**: Auto-complete interface names
+- **System Banner**: Display system info on login
 
 ## Quick Installation
 
 ### From .deb Package (Recommended)
 
 ```bash
-# Download and install
-wget https://github.com/najiebhaswell/klish-vpp/raw/main/klish-vpp_1.0.5_amd64.deb
-sudo dpkg -i klish-vpp_1.0.5_amd64.deb
+# Download and install (v1.0.6 - latest)
+wget https://github.com/najiebhaswell/klish-vpp/raw/main/klish-vpp_1.0.6_amd64.deb
+sudo dpkg -i klish-vpp_1.0.6_amd64.deb
 
 # Start the CLI daemon
 sudo systemctl start klishd
@@ -80,6 +82,8 @@ sudo systemctl start klishd
 | `show-trace` | Show packet trace |
 | `show-error` | Show error counters |
 | `show-pci` | Show PCI devices |
+| `show-bond` | Show bond interfaces |
+| `show-banner` | Show system info banner |
 | `ping <ip>` | Ping target |
 | `write-memory` | Save configuration |
 | `configure` | Enter config mode |
@@ -87,10 +91,8 @@ sudo systemctl start klishd
 ### Config Mode
 | Command | Description |
 |---------|-------------|
-| `interface <name>` | Configure interface (auto-creates loopback/VLAN) |
+| `interface <name>` | Configure interface (auto-creates loopback/VLAN/Bond) |
 | `no interface <name>` | Delete interface |
-| `lcp-create <if> <host>` | Create LCP interface |
-| `lcp-delete <if>` | Delete LCP interface |
 | `ip-route <net> <mask> <gw>` | Add IP route |
 
 ### Interface Mode
@@ -105,6 +107,10 @@ sudo systemctl start klishd
 | `no-lcp` | Remove LCP |
 | `enable` | Enable interface |
 | `disable` | Disable interface |
+| `mode <mode>` | Set bond mode (lacp, xor, round-robin, active-backup, broadcast) |
+| `load-balance <lb>` | Set load-balance algorithm (l2, l23, l34) |
+| `member <iface>` | Add member to bond |
+| `no-member <iface>` | Remove member from bond |
 
 ## Example Usage
 
