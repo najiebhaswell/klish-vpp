@@ -4,23 +4,43 @@
  */
 
 #include <stdio.h>
+
 #include <stdlib.h>
+
 #include <string.h>
+
 #include <unistd.h>
+
 #include <sys/socket.h>
+
 #include <sys/un.h>
+
 #include <errno.h>
+
 #include <assert.h>
+
 #include <ctype.h>
 
+
 #include <faux/faux.h>
+
 #include <faux/str.h>
+
 #include <faux/argv.h>
+
 #include <klish/kplugin.h>
+
 #include <klish/kcontext.h>
+
 #include <klish/kpargv.h>
+
 #include <klish/kentry.h>
+
 #include <klish/ksym.h>
+
+/* Forward declarations */
+static char* vpp_exec_cli(const char *cmd);
+
 
 #define VPP_CLI_SOCKET "/run/vpp/cli.sock"
 #define BUFFER_SIZE 8192
@@ -97,6 +117,55 @@ static void clear_current_interface(void) {
 }
 
 /* Helper to read from socket until prompt or EOF, handling Telnet IAC */
+
+/* Bond configuration helpers */
+static void get_bond_config_file(char *path, size_t size, const char *bond_name) {
+    snprintf(path, size, "/tmp/klish_bond_%s", bond_name);
+}
+
+static void set_pending_bond_config(const char *bond_name, const char *mode, const char *lb) {
+    char path[128];
+    get_bond_config_file(path, sizeof(path), bond_name);
+    FILE *f = fopen(path, "w");
+    if (f) {
+        fprintf(f, "%s\n%s\n", mode ? mode : "", lb ? lb : "");
+        fclose(f);
+    }
+}
+
+static int get_pending_bond_config(const char *bond_name, char *mode, size_t mode_sz, char *lb, size_t lb_sz) {
+    char path[128];
+    get_bond_config_file(path, sizeof(path), bond_name);
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    
+    if (mode) {
+        if (fgets(mode, mode_sz, f)) {
+            size_t len = strlen(mode);
+            if (len > 0 && mode[len-1] == '\n') mode[len-1] = 0;
+        } else mode[0] = 0;
+    }
+    if (lb) {
+        if (fgets(lb, lb_sz, f)) {
+            size_t len = strlen(lb);
+            if (len > 0 && lb[len-1] == '\n') lb[len-1] = 0;
+        } else lb[0] = 0;
+    }
+    fclose(f);
+    return 1;
+}
+
+static void clear_pending_bond_config(const char *bond_name) {
+    char path[128];
+    get_bond_config_file(path, sizeof(path), bond_name);
+    unlink(path);
+}
+
+static int bond_interface_exists(const char *bond_name) {
+    const char *result = vpp_exec_cli("show bond\n");
+    return (strstr(result, bond_name) != NULL);
+}
+
 static ssize_t read_until_prompt(int fd, char *buffer, size_t size) {
     size_t total = 0;
     ssize_t n;
@@ -1027,24 +1096,30 @@ int vpp_write_memory(kcontext_t *context) {
         iline = strtok(NULL, "\n");
     }
     
-    /* Second: Create bond interfaces */
+    /* Second: Create bond interfaces with correct mode and load-balance */
     fprintf(fp, "\n# Bond interfaces\n");
-    const char *bond_info = vpp_exec_cli("show bond");
-    char bond_buf[BUFFER_SIZE];
-    strncpy(bond_buf, bond_info, BUFFER_SIZE - 1);
-    bond_buf[BUFFER_SIZE - 1] = 0;
+    const char *bond_details_info = vpp_exec_cli("show bond details\n");
+    char bond_det_info[BUFFER_SIZE];
+    strncpy(bond_det_info, bond_details_info, BUFFER_SIZE - 1);
+    bond_det_info[BUFFER_SIZE - 1] = 0;
     
-    char *bline = strtok(bond_buf, "\n");
-    while (bline) {
-        /* Parse: "BondEthernet0" or similar bond interface info */
-        if (strstr(bline, "BondEthernet")) {
-            int bond_id = -1;
-            if (sscanf(bline, "BondEthernet%d", &bond_id) == 1 || 
-                sscanf(bline, " BondEthernet%d", &bond_id) == 1) {
-                fprintf(fp, "create bond mode lacp load-balance l34\n");
-            }
+    /* Parse each bond interface */
+    char *save_ptr = NULL;
+    char *det_line = strtok_r(bond_det_info, "\n", &save_ptr);
+    char curr_mode[32] = "lacp";
+    char curr_lb[16] = "l34";
+    
+    while (det_line) {
+        if (strncmp(det_line, "BondEthernet", 12) == 0) {
+            /* New bond interface - if we had a previous one with mode/lb, write it */
+        } else if (strstr(det_line, "mode:")) {
+            sscanf(det_line, "  mode: %31s", curr_mode);
+        } else if (strstr(det_line, "load balance:")) {
+            sscanf(det_line, "  load balance: %15s", curr_lb);
+            /* Write the create command for this bond */
+            fprintf(fp, "create bond mode %s load-balance %s\n", curr_mode, curr_lb);
         }
-        bline = strtok(NULL, "\n");
+        det_line = strtok_r(NULL, "\n", &save_ptr);
     }
     
     /* Save bond members */
@@ -1418,6 +1493,25 @@ int vpp_bond_add_member(kcontext_t *context) {
         return -1;
     }
     
+    /* If bond doesn't exist, create it with pending config or defaults */
+    if (!bond_interface_exists(bond)) {
+        char mode[32] = "lacp";
+        char lb[16] = "l34";
+        get_pending_bond_config(bond, mode, sizeof(mode), lb, sizeof(lb));
+        if (!mode[0]) strcpy(mode, "lacp");
+        if (!lb[0]) strcpy(lb, "l34");
+        
+        snprintf(cmd, sizeof(cmd), "create bond mode %s load-balance %s\n", mode, lb);
+        const char *result = vpp_exec_cli(cmd);
+        if (strstr(result, "BondEthernet")) {
+            kcontext_printf(context, "Created %s (mode: %s, load-balance: %s)\n", bond, mode, lb);
+            clear_pending_bond_config(bond);
+        } else if (strlen(result) > 0) {
+            kcontext_printf(context, "Error creating bond: %s", result);
+            return -1;
+        }
+    }
+    
     snprintf(cmd, sizeof(cmd), "bond add %s %s\n", bond, member);
     const char *result = vpp_exec_cli(cmd);
     if (strlen(result) > 0) {
@@ -1427,6 +1521,7 @@ int vpp_bond_add_member(kcontext_t *context) {
     }
     return 0;
 }
+
 
 /* Remove member from bond */
 int vpp_bond_del_member(kcontext_t *context) {
@@ -1452,6 +1547,93 @@ int vpp_bond_del_member(kcontext_t *context) {
 int vpp_show_bond(kcontext_t *context) {
     const char *result = vpp_exec_cli("show bond details\n");
     kcontext_printf(context, "%s", result);
+    return 0;
+}
+
+
+/* Set bond mode (for new bonds only) */
+int vpp_bond_set_mode(kcontext_t *context) {
+    const char *mode = get_param(context, "mode");
+    const char *bond = get_current_interface();
+    
+    if (!bond) {
+        kcontext_printf(context, "Error: Not in interface mode\n");
+        return -1;
+    }
+    
+    if (strncmp(bond, "Bond", 4) != 0) {
+        kcontext_printf(context, "Error: %s is not a bond interface\n", bond);
+        return -1;
+    }
+    
+    if (!mode) {
+        kcontext_printf(context, "Error: Mode required (lacp, xor, round-robin, active-backup, broadcast)\n");
+        return -1;
+    }
+    
+    /* Validate mode */
+    if (strcmp(mode, "lacp") != 0 && strcmp(mode, "xor") != 0 &&
+        strcmp(mode, "round-robin") != 0 && strcmp(mode, "active-backup") != 0 &&
+        strcmp(mode, "broadcast") != 0) {
+        kcontext_printf(context, "Error: Invalid mode '%s'\n", mode);
+        kcontext_printf(context, "Valid modes: lacp, xor, round-robin, active-backup, broadcast\n");
+        return -1;
+    }
+    
+    if (bond_interface_exists(bond)) {
+        kcontext_printf(context, "Error: Cannot change mode on existing bond.\n");
+        kcontext_printf(context, "Delete bond first with: no interface %s\n", bond);
+        return -1;
+    }
+    
+    /* Store pending config */
+    char lb[16] = {0};
+    get_pending_bond_config(bond, NULL, 0, lb, sizeof(lb));
+    set_pending_bond_config(bond, mode, lb[0] ? lb : "l34");
+    kcontext_printf(context, "Bond mode set to: %s\n", mode);
+    
+    return 0;
+}
+
+/* Set load-balance (for new bonds only) */
+int vpp_bond_set_load_balance(kcontext_t *context) {
+    const char *lb = get_param(context, "lb");
+    const char *bond = get_current_interface();
+    
+    if (!bond) {
+        kcontext_printf(context, "Error: Not in interface mode\n");
+        return -1;
+    }
+    
+    if (strncmp(bond, "Bond", 4) != 0) {
+        kcontext_printf(context, "Error: %s is not a bond interface\n", bond);
+        return -1;
+    }
+    
+    if (!lb) {
+        kcontext_printf(context, "Error: Load-balance required (l2, l23, l34)\n");
+        return -1;
+    }
+    
+    /* Validate */
+    if (strcmp(lb, "l2") != 0 && strcmp(lb, "l23") != 0 && strcmp(lb, "l34") != 0) {
+        kcontext_printf(context, "Error: Invalid load-balance '%s'\n", lb);
+        kcontext_printf(context, "Valid modes: l2, l23, l34\n");
+        return -1;
+    }
+    
+    if (bond_interface_exists(bond)) {
+        kcontext_printf(context, "Error: Cannot change load-balance on existing bond.\n");
+        kcontext_printf(context, "Delete bond first with: no interface %s\n", bond);
+        return -1;
+    }
+    
+    /* Store pending config */
+    char mode[32] = {0};
+    get_pending_bond_config(bond, mode, sizeof(mode), NULL, 0);
+    set_pending_bond_config(bond, mode[0] ? mode : "lacp", lb);
+    kcontext_printf(context, "Load-balance set to: %s\n", lb);
+    
     return 0;
 }
 
@@ -1506,6 +1688,8 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_bond_add_member", vpp_bond_add_member));
     kplugin_add_syms(plugin, ksym_new("vpp_bond_del_member", vpp_bond_del_member));
     kplugin_add_syms(plugin, ksym_new("vpp_show_bond", vpp_show_bond));
+    kplugin_add_syms(plugin, ksym_new("vpp_bond_set_mode", vpp_bond_set_mode));
+    kplugin_add_syms(plugin, ksym_new("vpp_bond_set_load_balance", vpp_bond_set_load_balance));
 
     /* Check if VPP is running */
     if (access(VPP_CLI_SOCKET, F_OK) != 0) {

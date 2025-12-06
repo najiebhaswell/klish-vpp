@@ -60,6 +60,14 @@
 <COMMAND name="no-lcp" help="Remove LCP"><ACTION sym="vpp_lcp_delete_current@vpp"/></COMMAND>
 <COMMAND name="enable" help="Enable interface"><ACTION sym="vpp_interface_up@vpp"/></COMMAND>
 <COMMAND name="disable" help="Disable interface"><ACTION sym="vpp_interface_down@vpp"/></COMMAND>
+<COMMAND name="mode" help="Set bond mode (for new bonds)">
+    <PARAM name="mode" ptype="/STRING" help="Bond mode: lacp, xor, round-robin, active-backup, broadcast"/>
+    <ACTION sym="vpp_bond_set_mode@vpp"/>
+</COMMAND>
+<COMMAND name="load-balance" help="Set load-balance algorithm (for new bonds)">
+    <PARAM name="lb" ptype="/STRING" help="Load balance: l2, l23, l34"/>
+    <ACTION sym="vpp_bond_set_load_balance@vpp"/>
+</COMMAND>
 <COMMAND name="member" help="Add member to this bond">
     <PARAM name="member" ptype="/IFACE" help="Member interface to add"/>
     <ACTION sym="vpp_bond_add_member@vpp"/>
