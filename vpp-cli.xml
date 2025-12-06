@@ -23,6 +23,7 @@
 <COMMAND name="show-trace" help="Show packet trace"><ACTION sym="vpp_show_trace@vpp"/></COMMAND>
 <COMMAND name="show-error" help="Show error counters"><ACTION sym="vpp_show_error@vpp"/></COMMAND>
 <COMMAND name="show-pci" help="Show PCI devices"><ACTION sym="vpp_show_pci@vpp"/></COMMAND>
+<COMMAND name="show-bond" help="Show bond details"><ACTION sym="vpp_show_bond@vpp"/></COMMAND>
 <COMMAND name="configure" help="Config mode"><ACTION sym="nav">push /config-view</ACTION></COMMAND>
 <COMMAND name="ping" help="Ping"><PARAM name="target" ptype="/IP_PREFIX" help="Target"/><ACTION sym="vpp_ping@vpp"/></COMMAND>
 <COMMAND name="write-memory" help="Save config"><ACTION sym="vpp_write_memory@vpp"/></COMMAND>
@@ -59,6 +60,14 @@
 <COMMAND name="no-lcp" help="Remove LCP"><ACTION sym="vpp_lcp_delete_current@vpp"/></COMMAND>
 <COMMAND name="enable" help="Enable interface"><ACTION sym="vpp_interface_up@vpp"/></COMMAND>
 <COMMAND name="disable" help="Disable interface"><ACTION sym="vpp_interface_down@vpp"/></COMMAND>
+<COMMAND name="member" help="Add member to this bond">
+    <PARAM name="member" ptype="/IFACE" help="Member interface to add"/>
+    <ACTION sym="vpp_bond_add_member@vpp"/>
+</COMMAND>
+<COMMAND name="no-member" help="Remove member from this bond">
+    <PARAM name="member" ptype="/IFACE" help="Member interface to remove"/>
+    <ACTION sym="vpp_bond_del_member@vpp"/>
+</COMMAND>
 <COMMAND name="exit" help="Back to config"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">pop</ACTION></COMMAND>
 <COMMAND name="end" help="Back to main"><ACTION sym="vpp_exit_interface@vpp"/><ACTION sym="nav">top /main</ACTION></COMMAND>
 </VIEW>

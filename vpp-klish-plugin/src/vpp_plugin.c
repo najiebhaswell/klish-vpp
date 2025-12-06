@@ -1366,6 +1366,66 @@ int vpp_show_pci(kcontext_t *context) {
     return 0;
 }
 
+
+/* Add member to current bond interface */
+int vpp_bond_add_member(kcontext_t *context) {
+    const char *member = get_param(context, "member");
+    const char *bond = get_current_interface();
+    char cmd[256];
+    
+    if (!bond) {
+        kcontext_printf(context, "Error: Not in interface mode\n");
+        return -1;
+    }
+    
+    if (!member) {
+        kcontext_printf(context, "Error: Member interface required\n");
+        return -1;
+    }
+    
+    /* Check if current interface is a bond */
+    if (strncmp(bond, "Bond", 4) != 0) {
+        kcontext_printf(context, "Error: %s is not a bond interface\n", bond);
+        return -1;
+    }
+    
+    snprintf(cmd, sizeof(cmd), "bond add %s %s\n", bond, member);
+    const char *result = vpp_exec_cli(cmd);
+    if (strlen(result) > 0) {
+        kcontext_printf(context, "%s", result);
+    } else {
+        kcontext_printf(context, "Added %s to %s\n", member, bond);
+    }
+    return 0;
+}
+
+/* Remove member from bond */
+int vpp_bond_del_member(kcontext_t *context) {
+    const char *member = get_param(context, "member");
+    char cmd[256];
+    
+    if (!member) {
+        kcontext_printf(context, "Error: Member interface required\n");
+        return -1;
+    }
+    
+    snprintf(cmd, sizeof(cmd), "bond del %s\n", member);
+    const char *result = vpp_exec_cli(cmd);
+    if (strlen(result) > 0) {
+        kcontext_printf(context, "%s", result);
+    } else {
+        kcontext_printf(context, "Removed %s from bond\n", member);
+    }
+    return 0;
+}
+
+/* Show bond details */
+int vpp_show_bond(kcontext_t *context) {
+    const char *result = vpp_exec_cli("show bond details\n");
+    kcontext_printf(context, "%s", result);
+    return 0;
+}
+
 int kplugin_vpp_init(kcontext_t *context) {
     kplugin_t *plugin = NULL;
 
@@ -1414,6 +1474,9 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_show_trace", vpp_show_trace));
     kplugin_add_syms(plugin, ksym_new("vpp_show_error", vpp_show_error));
     kplugin_add_syms(plugin, ksym_new("vpp_show_pci", vpp_show_pci));
+    kplugin_add_syms(plugin, ksym_new("vpp_bond_add_member", vpp_bond_add_member));
+    kplugin_add_syms(plugin, ksym_new("vpp_bond_del_member", vpp_bond_del_member));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_bond", vpp_show_bond));
 
     /* Check if VPP is running */
     if (access(VPP_CLI_SOCKET, F_OK) != 0) {
