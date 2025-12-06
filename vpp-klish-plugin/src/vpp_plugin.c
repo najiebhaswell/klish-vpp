@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 /*
  * VPP Plugin for Klish3
  * Connects Klish CLI to VPP API for Cisco-like interface management
@@ -9,7 +10,6 @@
 
 #include <string.h>
 #include <sys/utsname.h>
-static int banner_shown = 0;
 
 #include <unistd.h>
 
@@ -1813,9 +1813,9 @@ int vpp_show_banner(kcontext_t *context) {
     return 0;
 }
 int vpp_prompt(kcontext_t *context) {
-    if (!banner_shown) {
+    if (!getenv("VPP_BANNER_SHOWN")) {
         vpp_show_banner(context);
-        banner_shown = 1;
+        setenv("VPP_BANNER_SHOWN", "1", 1);
     }
     char hostname[64] = {0};
     gethostname(hostname, sizeof(hostname) - 1);
