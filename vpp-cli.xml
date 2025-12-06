@@ -43,7 +43,15 @@
         <ACTION sym="vpp_no_interface@vpp"/>
     </COMMAND>
 </COMMAND>
-<COMMAND name="ip-route" help="Add route"><PARAM name="network" ptype="/IP_PREFIX" help="Network"/><PARAM name="mask" ptype="/IP_PREFIX" help="Mask"/><PARAM name="gateway" ptype="/IP_PREFIX" help="Gateway"/><ACTION sym="vpp_add_ip_route@vpp"/></COMMAND>
+<COMMAND name="ip" help="IP commands">
+    <COMMAND name="route" help="Add static route">
+        <PARAM name="network" ptype="/IP_PREFIX" help="Destination network (x.x.x.x/y)"/>
+        <COMMAND name="next-hop" help="Next hop address">
+            <PARAM name="gateway" ptype="/IP_PREFIX" help="Next hop IP address"/>
+            <ACTION sym="vpp_add_ip_route@vpp"/>
+        </COMMAND>
+    </COMMAND>
+</COMMAND>
 <COMMAND name="end" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>
 <COMMAND name="exit" help="Exit config"><ACTION sym="nav">pop</ACTION></COMMAND>
 </VIEW>

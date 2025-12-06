@@ -994,7 +994,6 @@ int vpp_show_ip_route(kcontext_t *context) {
 /* Add IP route */
 int vpp_add_ip_route(kcontext_t *context) {
     const char *network = get_param(context, "network");
-    const char *mask = get_param(context, "mask");
     const char *gateway = get_param(context, "gateway");
     char cmd[256];
     
@@ -1003,25 +1002,16 @@ int vpp_add_ip_route(kcontext_t *context) {
         return -1;
     }
     
-    /* Convert mask to prefix */
-    int prefix = 24;
-    if (mask) {
-        if (strcmp(mask, "255.255.255.0") == 0) prefix = 24;
-        else if (strcmp(mask, "255.255.0.0") == 0) prefix = 16;
-        else if (strcmp(mask, "255.0.0.0") == 0) prefix = 8;
-        else if (strcmp(mask, "0.0.0.0") == 0) prefix = 0;
-    }
-    
-    snprintf(cmd, sizeof(cmd), "ip route add %s/%d via %s\n", network, prefix, gateway);
+    /* Network is already in CIDR format (x.x.x.x/y) */
+    snprintf(cmd, sizeof(cmd), "ip route add %s via %s\n", network, gateway);
     const char *result = vpp_exec_cli(cmd);
     if (strstr(result, "unknown input") != NULL) {
-        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
-        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        kcontext_printf(context, "Error: Route command failed\n");
         return -1;
     } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
-        kcontext_printf(context, "Route added: %s/%d via %s\n", network, prefix, gateway);
+        kcontext_printf(context, "Route added: %s via %s\n", network, gateway);
     }
     return 0;
 }
