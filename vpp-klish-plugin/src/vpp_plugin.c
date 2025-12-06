@@ -8,6 +8,8 @@
 #include <stdlib.h>
 
 #include <string.h>
+#include <sys/utsname.h>
+static int banner_shown = 0;
 
 #include <unistd.h>
 
@@ -1701,6 +1703,99 @@ int vpp_bond_set_load_balance(kcontext_t *context) {
     return 0;
 }
 
+
+/* Show system banner with device info */
+int vpp_show_banner(kcontext_t *context) {
+    char hostname[64] = {0};
+    char os_info[128] = "Unknown";
+    char mem_used[32] = "N/A";
+    char mem_total[32] = "N/A";
+    float cpu_usage = 0.0;
+    FILE *f;
+    
+    /* Get hostname */
+    gethostname(hostname, sizeof(hostname) - 1);
+    
+    /* Get OS info using uname */
+    struct utsname uts;
+    if (uname(&uts) == 0) {
+        snprintf(os_info, sizeof(os_info), "%s %s", uts.sysname, uts.release);
+    }
+    
+    /* Get memory info */
+    f = fopen("/proc/meminfo", "r");
+    if (f) {
+        unsigned long mem_total_kb = 0, mem_avail_kb = 0;
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            if (strncmp(line, "MemTotal:", 9) == 0) {
+                sscanf(line, "MemTotal: %lu", &mem_total_kb);
+            } else if (strncmp(line, "MemAvailable:", 13) == 0) {
+                sscanf(line, "MemAvailable: %lu", &mem_avail_kb);
+            }
+        }
+        fclose(f);
+        
+        if (mem_total_kb > 0) {
+            unsigned long mem_used_kb = mem_total_kb - mem_avail_kb;
+            snprintf(mem_used, sizeof(mem_used), "%.1fGi", mem_used_kb / 1024.0 / 1024.0);
+            snprintf(mem_total, sizeof(mem_total), "%.1fGi", mem_total_kb / 1024.0 / 1024.0);
+        }
+    }
+    
+    /* Get CPU usage from /proc/stat */
+    f = fopen("/proc/stat", "r");
+    if (f) {
+        char line[256];
+        if (fgets(line, sizeof(line), f)) {
+            unsigned long user, nice, system, idle, iowait, irq, softirq;
+            if (sscanf(line, "cpu %lu %lu %lu %lu %lu %lu %lu", 
+                       &user, &nice, &system, &idle, &iowait, &irq, &softirq) == 7) {
+                unsigned long total = user + nice + system + idle + iowait + irq + softirq;
+                unsigned long busy = user + nice + system + irq + softirq;
+                if (total > 0) {
+                    cpu_usage = (float)busy / total * 100.0;
+                }
+            }
+        }
+        fclose(f);
+    }
+    
+    kcontext_printf(context, "\n");
+    kcontext_printf(context, "========================================================================\n");
+    kcontext_printf(context, "------------------------INFORMASI ROUTER--------------------------------\n");
+    kcontext_printf(context, "========================================================================\n");
+    kcontext_printf(context, "Device Name             : %s\n", hostname);
+    kcontext_printf(context, "OS Version              : %s\n", os_info);
+    kcontext_printf(context, "Memory Usage            : %s used / %s total\n", mem_used, mem_total);
+    kcontext_printf(context, "CPU Usage               : %.1f%%\n", cpu_usage);
+    kcontext_printf(context, "========================================================================\n");
+    kcontext_printf(context, "========================================================================\n");
+    kcontext_printf(context, "\n");
+    
+    /* Show last login info if available (standard unix feature, hard to emulate without PAM) */
+    time_t now = time(NULL);
+    char *time_str = ctime(&now);
+    if (time_str) {
+        time_str[strlen(time_str)-1] = 0; /* remove newline */
+        kcontext_printf(context, "Current time: %s\n", time_str);
+    }
+    kcontext_printf(context, "\n");
+    
+    return 0;
+}
+
+/* Custom prompt function that shows banner once */
+int vpp_prompt(kcontext_t *context) {
+    if (!banner_shown) {
+        vpp_show_banner(context);
+        banner_shown = 1;
+    }
+    char hostname[64] = {0};
+    gethostname(hostname, sizeof(hostname) - 1);
+    kcontext_printf(context, "%s# ", hostname);
+    return 0;
+}
 int kplugin_vpp_init(kcontext_t *context) {
     kplugin_t *plugin = NULL;
 
@@ -1754,6 +1849,8 @@ int kplugin_vpp_init(kcontext_t *context) {
     kplugin_add_syms(plugin, ksym_new("vpp_show_bond", vpp_show_bond));
     kplugin_add_syms(plugin, ksym_new("vpp_bond_set_mode", vpp_bond_set_mode));
     kplugin_add_syms(plugin, ksym_new("vpp_bond_set_load_balance", vpp_bond_set_load_balance));
+    kplugin_add_syms(plugin, ksym_new("vpp_show_banner", vpp_show_banner));
+    kplugin_add_syms(plugin, ksym_new("vpp_prompt", vpp_prompt));
 
     /* Check if VPP is running */
     if (access(VPP_CLI_SOCKET, F_OK) != 0) {

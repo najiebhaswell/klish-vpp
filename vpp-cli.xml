@@ -10,8 +10,9 @@
 <PTYPE name="UINT"><ACTION sym="UINT@klish"/></PTYPE>
 
 <VIEW name="main">
-<PROMPT name="prompt"><ACTION sym="prompt">%h# </ACTION></PROMPT>
+<PROMPT name="prompt"><ACTION sym="vpp_prompt@vpp"/></PROMPT>
 <COMMAND name="show-interfaces" help="Show interfaces"><ACTION sym="vpp_show_interfaces@vpp"/></COMMAND>
+<COMMAND name="show-banner" help="Show system info banner"><ACTION sym="vpp_show_banner@vpp"/></COMMAND>
 <COMMAND name="show-version" help="Show version"><ACTION sym="vpp_show_version@vpp"/></COMMAND>
 <COMMAND name="show-ip-route" help="Show routes"><ACTION sym="vpp_show_ip_route@vpp"/></COMMAND>
 <COMMAND name="show-hardware" help="Show hardware interfaces"><ACTION sym="vpp_show_hardware@vpp"/></COMMAND>
