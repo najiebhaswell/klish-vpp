@@ -1705,9 +1705,12 @@ int vpp_bond_set_load_balance(kcontext_t *context) {
 
 
 /* Show system banner with device info */
+
+/* Show system banner with device info */
 int vpp_show_banner(kcontext_t *context) {
     char hostname[64] = {0};
-    char os_info[128] = "Unknown";
+    char distro_name[64] = "Unknown Linux";
+    char kernel_ver[64] = "Unknown";
     char mem_used[32] = "N/A";
     char mem_total[32] = "N/A";
     float cpu_usage = 0.0;
@@ -1716,10 +1719,34 @@ int vpp_show_banner(kcontext_t *context) {
     /* Get hostname */
     gethostname(hostname, sizeof(hostname) - 1);
     
-    /* Get OS info using uname */
+    /* Get Distro from /etc/os-release */
+    f = fopen("/etc/os-release", "r");
+    if (f) {
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            if (strncmp(line, "PRETTY_NAME=", 12) == 0) {
+                char *start = strchr(line, '"');
+                if (start) {
+                    start++;
+                    char *end = strchr(start, '"');
+                    if (end) *end = 0;
+                    strncpy(distro_name, start, sizeof(distro_name) - 1);
+                } else {
+                    /* PRETTY_NAME=Debian... (no quotes) */
+                     char *nl = strchr(line, '\n');
+                     if (nl) *nl = 0;
+                     strncpy(distro_name, line + 12, sizeof(distro_name) - 1);
+                }
+                break;
+            }
+        }
+        fclose(f);
+    }
+
+    /* Get Kernel info using uname */
     struct utsname uts;
     if (uname(&uts) == 0) {
-        snprintf(os_info, sizeof(os_info), "%s %s", uts.sysname, uts.release);
+        strncpy(kernel_ver, uts.release, sizeof(kernel_ver) - 1);
     }
     
     /* Get memory info */
@@ -1766,26 +1793,25 @@ int vpp_show_banner(kcontext_t *context) {
     kcontext_printf(context, "------------------------INFORMASI ROUTER--------------------------------\n");
     kcontext_printf(context, "========================================================================\n");
     kcontext_printf(context, "Device Name             : %s\n", hostname);
-    kcontext_printf(context, "OS Version              : %s\n", os_info);
+    kcontext_printf(context, "Distro                  : %s\n", distro_name);
+    kcontext_printf(context, "Kernel                  : %s\n", kernel_ver);
     kcontext_printf(context, "Memory Usage            : %s used / %s total\n", mem_used, mem_total);
     kcontext_printf(context, "CPU Usage               : %.1f%%\n", cpu_usage);
     kcontext_printf(context, "========================================================================\n");
     kcontext_printf(context, "========================================================================\n");
     kcontext_printf(context, "\n");
     
-    /* Show last login info if available (standard unix feature, hard to emulate without PAM) */
+    /* Show last login info if available */
     time_t now = time(NULL);
     char *time_str = ctime(&now);
     if (time_str) {
-        time_str[strlen(time_str)-1] = 0; /* remove newline */
+        time_str[strlen(time_str)-1] = 0;
         kcontext_printf(context, "Current time: %s\n", time_str);
     }
     kcontext_printf(context, "\n");
     
     return 0;
 }
-
-/* Custom prompt function that shows banner once */
 int vpp_prompt(kcontext_t *context) {
     if (!banner_shown) {
         vpp_show_banner(context);
