@@ -789,7 +789,6 @@ int vpp_enter_interface(kcontext_t *context) {
     const char *iface = get_param(context, "interface");
     char cmd[256];
     
-    fprintf(stderr, "DEBUG: vpp_enter_interface called, iface=%s\n", iface ? iface : "NULL");
     
     if (!iface) {
         kcontext_printf(context, "Error: Interface name required\n");
@@ -809,7 +808,11 @@ int vpp_enter_interface(kcontext_t *context) {
                 kcontext_printf(context, "Loopback interface %s created\n", iface);
             } else if (strstr(result, "already exists") || strstr(result, "is in use")) {
                 /* Already exists - OK */
-            } else if (strlen(result) > 0) {
+            } else if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
                 kcontext_printf(context, "%s", result);
             }
         }
@@ -836,14 +839,17 @@ int vpp_enter_interface(kcontext_t *context) {
             /* Check if created or already exists */
             if (strstr(result, iface) || strlen(result) == 0 || strstr(result, "already exists")) {
                 kcontext_printf(context, "VLAN subinterface %s created\n", iface);
-            } else if (strlen(result) > 0) {
+            } else if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
                 kcontext_printf(context, "%s", result);
             }
         }
     }
     
     set_current_interface(iface);
-    fprintf(stderr, "DEBUG: current_interface set to '%s'\n", iface);
     return 0;
 }
 
@@ -872,7 +878,11 @@ int vpp_set_mtu(kcontext_t *context) {
     /* VPP command: set interface mtu packet <value> <interface> */
     snprintf(cmd, sizeof(cmd), "set interface mtu packet %s %s\n", mtu, iface);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "MTU set to %s on %s\n", mtu, iface);
@@ -898,7 +908,11 @@ int vpp_lcp_create_current(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "lcp create %s host-if %s\n", iface, hostif);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "LCP created: %s -> %s\n", iface, hostif);
@@ -918,7 +932,11 @@ int vpp_lcp_delete_current(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "lcp delete %s\n", iface);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "LCP deleted: %s\n", iface);
@@ -993,7 +1011,11 @@ int vpp_add_ip_route(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "ip route add %s/%d via %s\n", network, prefix, gateway);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Route added: %s/%d via %s\n", network, prefix, gateway);
@@ -1022,7 +1044,11 @@ int vpp_del_ip_route(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "ip route del %s/%d via %s\n", network, prefix, gateway);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Route deleted: %s/%d via %s\n", network, prefix, gateway);
@@ -1260,7 +1286,11 @@ int vpp_lcp_create(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "lcp create %s host-if %s\n", iface, hostif);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "LCP created: %s -> %s\n", iface, hostif);
@@ -1280,7 +1310,11 @@ int vpp_lcp_delete(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "lcp delete %s\n", iface);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "LCP deleted: %s\n", iface);
@@ -1309,7 +1343,11 @@ int vpp_create_subinterface(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "create sub %s %s dot1q %s exact-match\n", iface, subid, vlanid);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Subinterface created: %s.%s (VLAN %s)\n", iface, subid, vlanid);
@@ -1329,7 +1367,11 @@ int vpp_delete_subinterface(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "delete sub %s", iface);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Subinterface deleted: %s\n", iface);
@@ -1355,7 +1397,11 @@ int vpp_delete_loopback(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "delete loopback interface intfc %s", iface);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Loopback deleted: %s\n", iface);
@@ -1389,7 +1435,11 @@ int vpp_no_interface(kcontext_t *context) {
     }
     
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Interface deleted: %s\n", iface);
@@ -1508,7 +1558,11 @@ int vpp_bond_add_member(kcontext_t *context) {
         if (strstr(result, "BondEthernet")) {
             kcontext_printf(context, "Created %s (mode: %s, load-balance: %s)\n", bond, mode, lb);
             clear_pending_bond_config(bond);
-        } else if (strlen(result) > 0) {
+        } else if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
             kcontext_printf(context, "Error creating bond: %s", result);
             return -1;
         }
@@ -1516,7 +1570,11 @@ int vpp_bond_add_member(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "bond add %s %s\n", bond, member);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Added %s to %s\n", member, bond);
@@ -1537,7 +1595,11 @@ int vpp_bond_del_member(kcontext_t *context) {
     
     snprintf(cmd, sizeof(cmd), "bond del %s\n", member);
     const char *result = vpp_exec_cli(cmd);
-    if (strlen(result) > 0) {
+    if (strstr(result, "unknown input") != NULL) {
+        kcontext_printf(context, "Error: LCP plugin not available in VPP\n");
+        kcontext_printf(context, "Install linux-cp plugin: apt install vpp-plugin-devtools\n");
+        return -1;
+    } else if (strlen(result) > 0) {
         kcontext_printf(context, "%s", result);
     } else {
         kcontext_printf(context, "Removed %s from bond\n", member);
