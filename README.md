@@ -98,19 +98,19 @@ sudo systemctl start klishd
 ### Interface Mode
 | Command | Description |
 |---------|-------------|
-| `ip <addr/prefix>` | Set IPv4 address |
-| `ipv6 <addr/prefix>` | Set IPv6 address |
-| `no-ip <addr/prefix>` | Remove IPv4 address |
-| `no-ipv6 <addr/prefix>` | Remove IPv6 address |
+| `ip address <addr/prefix>` | Set IPv4 address |
+| `ipv6 address <addr/prefix>` | Set IPv6 address |
+| `no ip address <addr/prefix>` | Remove IPv4 address |
+| `no ipv6 address <addr/prefix>` | Remove IPv6 address |
 | `mtu <value>` | Set MTU |
 | `lcp <hostif>` | Create LCP for this interface |
-| `no-lcp` | Remove LCP |
+| `no lcp` | Remove LCP |
 | `enable` | Enable interface |
 | `disable` | Disable interface |
 | `mode <mode>` | Set bond mode (lacp, xor, round-robin, active-backup, broadcast) |
 | `load-balance <lb>` | Set load-balance algorithm (l2, l23, l34) |
 | `member <iface>` | Add member to bond |
-| `no-member <iface>` | Remove member from bond |
+| `no member <iface>` | Remove member from bond |
 
 ## Example Usage
 
