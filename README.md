@@ -128,7 +128,7 @@ server(config-if)# enable
 server(config-if)# end
 
 server# write-memory
-Configuration saved to /etc/vpp/startup.vpp
+Configuration saved to /etc/vpp/klish-startup.conf
 ```
 
 ## Requirements
