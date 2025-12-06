@@ -1,3 +1,4 @@
+#include <unistd.h>
 #define _DEFAULT_SOURCE
 /*
  * VPP Plugin for Klish3
@@ -1813,10 +1814,15 @@ int vpp_show_banner(kcontext_t *context) {
     return 0;
 }
 int vpp_prompt(kcontext_t *context) {
-    if (!getenv("VPP_BANNER_SHOWN")) {
+    char flag_file[128];
+    snprintf(flag_file, sizeof(flag_file), "/tmp/klish_sess_%d.banner", (int)getppid());
+
+    if (access(flag_file, F_OK) != 0) {
         vpp_show_banner(context);
-        setenv("VPP_BANNER_SHOWN", "1", 1);
+        FILE *fp = fopen(flag_file, "w");
+        if (fp) fclose(fp);
     }
+
     char hostname[64] = {0};
     gethostname(hostname, sizeof(hostname) - 1);
     kcontext_printf(context, "%s# ", hostname);
